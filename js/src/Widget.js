@@ -1,8 +1,10 @@
 import { Base } from "./Base";
-export const Widget = () => {
+import BarChart from './charts/BarChart';
+export const Widget = (payload) => {
+    const _data = payload.data;
     return (
         <Base>
-            <div style={{ padding: 20 }}>I'm the 🍪!</div>
+            <BarChart width={600} height={400} data={_data} />
         </Base>
     );
 };
