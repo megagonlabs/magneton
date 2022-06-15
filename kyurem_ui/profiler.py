@@ -7,4 +7,7 @@ class Profiler:
     
     def get_node_distribution(self, skip_metadata=False):
         dist = self.graph_utils.get_stat_by_node_label(skip_metadata)
-        return dist
+        dist_arr = []
+        for key, value in dist.items():
+            dist_arr.append({"x":key,"y":value})
+        return dist_arr

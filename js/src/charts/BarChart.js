@@ -1,15 +1,17 @@
 import * as d3 from 'd3';
 import React, { useRef, useEffect } from 'react';
 
-function BarChart({ chart_width, chart_height, data }){
+function BarChart(bar_data){
     const ref = useRef();
-
+    
     useEffect(() => {
         // set the dimensions and margins of the graph
         // size of plot
-        var margin = {top: 20, right: 20, bottom: 100, left: 40},
-            width = chart_width - margin.left - margin.right,
-            height = chart_height - margin.top - margin.bottom;
+        const margin = {top: 20, right: 20, bottom: 100, left: 40},
+            width = 600 - margin.left - margin.right,
+            height = 400 - margin.top - margin.bottom;
+        const data = bar_data.data;
+
         // set the ranges
         var x = d3.scaleBand()
                   .range([0, width])
@@ -65,6 +67,6 @@ function BarChart({ chart_width, chart_height, data }){
         
     )
 
-}
+};
 
 export default BarChart;
