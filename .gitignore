@@ -6,6 +6,7 @@ kyurem_ui/__pycache__/
 kyurem_ui/bundle.js
 kyurem_ui/dev/__pycache__/
 development.ipynb
+**/__pycache__
 
 # Logs
 logs
