@@ -45,4 +45,4 @@ except FileExistsError:
                       if IDOM_DEBUG_MODE.current else None),
     )
 
-from .Widget import Widget
+from .Distribution import Distribution

@@ -37731,7 +37731,7 @@ function BarChart(bar_data) {
   });
 }
 
-var Widget = function Widget(payload) {
+var Distribution = function Distribution(payload) {
   var _data = payload.data;
   return /*#__PURE__*/jsxRuntime.exports.jsx(Base, {
     children: /*#__PURE__*/jsxRuntime.exports.jsx(BarChart, {
@@ -37754,4 +37754,4 @@ function bind(node, config) {
   };
 }
 
-export { Widget, bind };
+export { Distribution, bind };

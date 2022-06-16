@@ -8,5 +8,5 @@ export function bind(node, config) {
         unmount: () => ReactDOM.unmountComponentAtNode(node),
     };
 }
-import { Widget } from "./Widget";
-export { Widget };
+import { Distribution } from "./Distribution";
+export { Distribution };

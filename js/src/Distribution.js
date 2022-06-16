@@ -1,6 +1,6 @@
 import { Base } from "./Base";
 import BarChart from './charts/BarChart';
-export const Widget = (payload) => {
+export const Distribution = (payload) => {
     const _data = payload.data;
     return (
         <Base>
