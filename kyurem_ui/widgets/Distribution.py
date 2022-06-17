@@ -1,4 +1,4 @@
-from . import _WEB_MODULE
+from .. import _WEB_MODULE
 import idom
 
 class Distribution:
