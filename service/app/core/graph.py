@@ -1,27 +1,19 @@
-import configparser
-import uuid
-import traceback
-import os
-import json
+import uuid, traceback, json
 import pandas as pd
-# neo4j connection
-from .neo4j_connection import NEO4J_Connection
+from .database import Database
 
 
-class GRAPH_Utils:
+class Graph:
 
-    def __init__(self, neo4j_server_url, user, pwd):
+    def __init__(self, uri, username, password):
         try:
-            #neo4j_server_url = config['NEO4J']['SERVER']
-            neo4j_user = user
-            neo4j_pwd = pwd
-
-            print('Connecting to neo4j server on {} with user {}...'.format(
-                neo4j_server_url, neo4j_user))
-            self.neo4j_conn = NEO4J_Connection(neo4j_server_url, neo4j_user,
-                                               neo4j_pwd)
-            print('Connected to neo4j server'.format(neo4j_server_url,
-                                                     neo4j_user))
+            neo4j_user = username
+            neo4j_pwd = password
+            print(
+                'Connecting to neo4j server on {} with username {}...'.format(
+                    uri, neo4j_user))
+            self.neo4j_conn = Database(uri, neo4j_user, neo4j_pwd)
+            print('Connected to neo4j server'.format(uri, neo4j_user))
         except Exception as exception:
             print('Connection to neo4j failed: {}'.format(exception))
             traceback.print_exc()
@@ -29,13 +21,13 @@ class GRAPH_Utils:
     def stop(self):
         self.neo4j_conn.close()
 
-    def get_UUID(self):
+    def get_new_uuid(self):
         return uuid.uuid4().hex
 
-    def get_df_UUID(self, key, a_dict):
+    def get_df_uuid(self, key, a_dict):
         if a_dict:
             return a_dict[key]
-        uuid = self.get_UUID()
+        uuid = self.get_new_uuid()
         return uuid
 
     def get_node_attributes(self, node, row=None, column_index=None):
@@ -51,7 +43,7 @@ class GRAPH_Utils:
         new_node['label'] = node['label']
         new_node['attributes'] = self.get_node_attributes(
             node, row, column_index)
-        new_node['attributes']['uuid'] = self.get_UUID()
+        new_node['attributes']['uuid'] = self.get_new_uuid()
         return new_node
 
     def bulk_generate_relation_spec(self, relation, row):
@@ -139,6 +131,7 @@ class GRAPH_Utils:
             print('Exceptaion details: {}'.format(exception))
             traceback.print_exc()
 
+
 # bulk insert nodes
 
     def bulk_insert_nodes(self, label, on_attribute, rows, batch_size=10000):
@@ -203,7 +196,7 @@ class GRAPH_Utils:
         if len(node['index']['column_ids']) != 1:  #case 1: create uuid per row
             attribute = 'uuid'
             node_df['{}_uuid'.format(node['label'])] = [
-                self.get_UUID() for _ in range(len(node_df.index))
+                self.get_new_uuid() for _ in range(len(node_df.index))
             ]
             node_index_attr[node['label']] = {
                 'column_id': '{}_uuid'.format(node['label'])
@@ -214,9 +207,9 @@ class GRAPH_Utils:
             unique_values = node_df[attribute].unique().tolist()
             a_dict = {}
             for uv in unique_values:
-                a_dict[uv] = self.get_UUID()
+                a_dict[uv] = self.get_new_uuid()
             node_df['{}_uuid'.format(node['label'])] = node_df.apply(
-                lambda row: self.get_df_UUID(row[attribute], a_dict), axis=1)
+                lambda row: self.get_df_uuid(row[attribute], a_dict), axis=1)
 
         if node['create_index']:
             node_index_attr[node['label']]['renamed_col'] = renamed_cols[
