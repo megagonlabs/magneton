@@ -29,9 +29,3 @@ class Explorer:
         else:
             # profile has not been set, set profile
             return self.set_profile(database_name=database_name)
-
-    def get_distribution(self, type, neo4j_server_url):
-        kh_profiler = self.get_profile(neo4j_server_url)
-        if type == "node":
-            return kh_profiler.get_node_distribution()
-        return None
