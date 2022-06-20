@@ -1,10 +1,10 @@
 .ipynb_checkpoints/
 .vscode/
 .DS_Store
-kyurem_ui.egg-info/
-kyurem_ui/__pycache__/
-kyurem_ui/bundle.js
-kyurem_ui/dev/__pycache__/
+kyurem_client.egg-info/
+kyurem_client/__pycache__/
+kyurem_client/bundle.js
+kyurem_client/dev/__pycache__/
 development.ipynb
 **/__pycache__
 

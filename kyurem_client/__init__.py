@@ -16,8 +16,8 @@ except ImportError or ModuleNotFoundError:
 _BUNDLE_PATH = Path(__file__).parent / BUNDLE_JS
 _VERSION_PATH = Path(__file__).parent / 'version'
 version = Path(_VERSION_PATH).read_text().strip()
-name = f"kyurem_ui@{version}{EPOCH}"
-print("kyurem_ui: " + version)
+name = f"kyurem_client@{version}{EPOCH}"
+print("kyurem_client: " + version)
 file = _BUNDLE_PATH
 fallback = "..."
 _WEB_MODULE = None

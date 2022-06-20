@@ -1,0 +1,8 @@
+*/__pycache__
+__pycache__
+.ipynb_checkpoints
+*.ipynb
+test/
+*neo4j_cred.json
+*aws_cred.json
+labeler-auth-firebase-adminsdk-m874u-0ee7c634b0.json
