@@ -22,7 +22,7 @@ package = {
         "neo4j==1.7.2",
         "neobolt==1.7.9",
         "neotime==1.7.4",
-        "pandas==1.1.2"
+        "pandas==1.4.2"
     ],
     "include_package_data": True,
     "zip_safe": False
