@@ -5,6 +5,7 @@ DATABASE_503_RESPONSE = Response(response=DATABASE_503_RESPONSE_MESSAGE,
                                  status=503)
 MAX_QUERY_LIMIT = 1000
 DEFAULT_QUERY_LIMIT = 10
+KNOWLEDGE_HUB_CLUSTER_REGION = 'us-east-2'
 
 
 def SERVER_ERROR_500_RESPONSE(env, error=None):
