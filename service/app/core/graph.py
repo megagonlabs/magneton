@@ -9,14 +9,9 @@ class Graph:
         try:
             neo4j_user = username
             neo4j_pwd = password
-            print(
-                'Connecting to neo4j server on {} with username {}...'.format(
-                    uri, neo4j_user))
             self.neo4j_conn = Database(uri, neo4j_user, neo4j_pwd)
-            print('Connected to neo4j server'.format(uri, neo4j_user))
-        except Exception as exception:
-            print('Connection to neo4j failed: {}'.format(exception))
-            traceback.print_exc()
+        except Exception:
+            raise Exception('Failed to connect to database.')
 
     def stop(self):
         self.neo4j_conn.close()

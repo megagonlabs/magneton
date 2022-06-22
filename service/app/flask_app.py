@@ -7,6 +7,8 @@ import app.core.utils.boto3 as boto3_utils
 
 app = Flask(__name__)
 APP_ENVIRONMENT = os.getenv('FLASK_ENV', 'production')
+if os.path.exists('neo4j_cred.json') or os.path.exists('aws_cred.json'):
+    APP_ENVIRONMENT = 'development'
 app.config['ENV'] = APP_ENVIRONMENT
 CORS(app)
 
@@ -63,7 +65,9 @@ def check_profile():
             database_uri = boto3_utils.get_task_ip(
                 ecs=ecs,
                 cluster=knowledge_hub_cluster_ARN,
-                service_name=service_name)
+                service_name=service_name,
+                env=APP_ENVIRONMENT,
+                aws=aws)
         except Exception as ex:
             return SERVER_ERROR_500_RESPONSE(app.config.get('ENV'), ex)
         if database_uri is None or len(database_uri.strip()) == 0:
@@ -73,4 +77,4 @@ def check_profile():
                                          database_uri=database_uri)
 
 
-from app.routes import distribution, profile
+from app.routes import distribution

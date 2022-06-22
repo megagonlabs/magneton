@@ -224,10 +224,9 @@ class Database:
             with self.neo4j_db.session() as session:
                 result = session.write_transaction(*args, **kwargs)
             return result
-        except BrokenPipeError:
+        except BrokenPipeError as ex:
             try:
-                self.logger.error(
-                    'Connection to neo4j failed: {}'.format(exception))
+                self.logger.error('Connection to neo4j failed: {}'.format(ex))
                 self.logger.error('Retring...')
                 self._initialize_connection()
                 with self.neo4j_db.session() as session:
@@ -769,9 +768,8 @@ class Database:
 
     def _run_query(self, tx, query):
         resultset = tx.run(query)
-
+        # TODO: BUG - AttributeError: 'Result' object has no attribute 'records'
         records = resultset.records()
-
         results = []
         for record in records:
             items = record.items()

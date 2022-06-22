@@ -39,7 +39,11 @@ def get_ecs_service_name_with_tag(ecs=None, cluster: str = '', tag: dict = {}):
     return service_name
 
 
-def get_task_ip(ecs=None, cluster: str = '', service_name: str = ''):
+def get_task_ip(ecs=None,
+                aws=None,
+                cluster: str = '',
+                service_name: str = '',
+                env: str = 'production'):
     if ecs is None:
         raise Exception('"ecs" can not be None.')
     elif type(cluster) is not str:
@@ -55,4 +59,17 @@ def get_task_ip(ecs=None, cluster: str = '', service_name: str = ''):
     container = task.get('containers')[0]
     network_interface = container.get('networkInterfaces')[0]
     private_ip = network_interface['privateIpv4Address']
+    attachmentId = network_interface['attachmentId']
+    # test/development environment requires public IP for the neo4j database
+    if env == 'development' or env == 'test':
+        attachments = task.get('attachments', [])
+        networkInterfaceId = None
+        for attachment in attachments:
+            if attachment['id'] == attachmentId:
+                for detail in attachment['details']:
+                    if detail['name'] == 'networkInterfaceId':
+                        networkInterfaceId = detail['value']
+        if networkInterfaceId is not None:
+            eni = aws.resource('ec2').NetworkInterface(networkInterfaceId)
+            return eni.association_attribute['PublicIp']
     return private_ip
