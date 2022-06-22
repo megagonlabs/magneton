@@ -1,18 +1,16 @@
 import json
-
 import jsonpath_ng as jp
 from jsonmerge import merge
 
-### json utility functions
-## jsonpath get
+
 def json_query(json_object, json_path_query, single=True, default=None):
 
     jpq = jp.parse(json_path_query)
-    match_values = [ m.value for m in jpq.find(json_object) ]
+    match_values = [m.value for m in jpq.find(json_object)]
 
     r = match_values
     if single:
-        r =  match_values[0] if match_values else None
+        r = match_values[0] if match_values else None
 
     if r == None:
         if default == None:
@@ -21,6 +19,7 @@ def json_query(json_object, json_path_query, single=True, default=None):
             return default
     else:
         return r
+
 
 def json_query_set(json_object, attribute, value, context='$'):
     jpq = jp.parse(context)
@@ -39,24 +38,42 @@ def json_query_set(json_object, attribute, value, context='$'):
 
 
 def json_query_add(json_object, attribute, value, context='$', single=True):
-    json_query_update(json_object, attribute, lambda match : value, context=context, add=True, single=single)
+    json_query_update(json_object,
+                      attribute,
+                      lambda match: value,
+                      context=context,
+                      add=True,
+                      single=single)
 
-def json_query_update(json_object, attribute, update_function, context='$', add=False, single=True):
+
+def json_query_update(json_object,
+                      attribute,
+                      update_function,
+                      context='$',
+                      add=False,
+                      single=True):
     json_path_query = context + '.' + attribute
     jpq = jp.parse(json_path_query)
     matches = jpq.find(json_object)
     for match in matches:
         if type(match.path) is jp.Index:
             if add:
-                match.context.value[match.path.index] = _add(match.context.value[match.path.index], update_function(match), single=single)
+                match.context.value[match.path.index] = _add(
+                    match.context.value[match.path.index],
+                    update_function(match),
+                    single=single)
             else:
                 match.context.value[match.path.index] = update_function(match)
         else:
             for field in match.path.fields:
                 if add:
-                    match.context.value[field] = _add(match.context.value[field], update_function(match), single=single)
+                    match.context.value[field] = _add(
+                        match.context.value[field],
+                        update_function(match),
+                        single=single)
                 else:
                     match.context.value[field] = update_function(match)
+
 
 def _add(target, value, single=True):
     t = target
@@ -90,8 +107,10 @@ def _add(target, value, single=True):
                 return t + value
                 #raise Exception("{} is not a list".format(value))
 
+
 def merge_json(original_json, update_json):
     return merge(original_json, update_json)
+
 
 def union_jsonarray_by_attribute(json_array_a, json_array_b, attr):
     m = {}
@@ -102,8 +121,12 @@ def union_jsonarray_by_attribute(json_array_a, json_array_b, attr):
 
     return list(m.values())
 
+
 ## flatten json
-def flatten_json(json_object, separator='___', num_marker='$$$', flattenList=False):
+def flatten_json(json_object,
+                 separator='___',
+                 num_marker='$$$',
+                 flattenList=False):
     result = {}
 
     def _flatten_recursively(x, prefix=''):
@@ -114,7 +137,9 @@ def flatten_json(json_object, separator='___', num_marker='$$$', flattenList=Fal
             if flattenList:
                 i = 0
                 for a in x:
-                    _flatten_recursively(a, prefix + num_marker + str(i) + num_marker + separator)
+                    _flatten_recursively(
+                        a,
+                        prefix + num_marker + str(i) + num_marker + separator)
                     i += 1
             else:
                 result[prefix[:-len(separator)]] = x
@@ -125,7 +150,10 @@ def flatten_json(json_object, separator='___', num_marker='$$$', flattenList=Fal
     return result
 
 
-def unflatten_json(json_object, separator='___', num_marker='$$$', unflattenList=False):
+def unflatten_json(json_object,
+                   separator='___',
+                   num_marker='$$$',
+                   unflattenList=False):
     result = {}
     for a in json_object:
         v = json_object[a]
@@ -133,7 +161,7 @@ def unflatten_json(json_object, separator='___', num_marker='$$$', unflattenList
         r = result
         prev_r = None
         prev_ali = None
-        for i in range(0,len(al)):
+        for i in range(0, len(al)):
             ali = al[i]
             alix = _is_list_index(ali, num_marker)
             is_index = type(alix) == int
@@ -165,7 +193,7 @@ def unflatten_json(json_object, separator='___', num_marker='$$$', unflattenList
                                 r[alix] = {}
                         else:
                             r = r + [None] * (alix - len(r) + 1)
-                            r[alix]= {}
+                            r[alix] = {}
                             if prev_r is None:
                                 result = r
                             else:
@@ -181,12 +209,14 @@ def unflatten_json(json_object, separator='___', num_marker='$$$', unflattenList
                 r = r[alix]
     return result
 
+
 def _is_list_index(s, num_marker='$$$'):
     try:
-        if s[0:len(num_marker)] != num_marker or s[len(s)-len(num_marker):] != num_marker:
+        if s[0:len(num_marker)] != num_marker or s[
+                len(s) - len(num_marker):] != num_marker:
             return s
         else:
-            s = s[len(num_marker):len(s)-len(num_marker)]
+            s = s[len(num_marker):len(s) - len(num_marker)]
         x = int(s)
         if x >= 0:
             return x

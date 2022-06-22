@@ -1,26 +1,41 @@
 from .profiler import Profiler
 
+
 class Explorer:
 
-    def __init__(self, username, pwd):
-        self.__user = username
-        self.__password = pwd
-        self.__profiler_dict = {}
+    def __init__(self, database_username, database_password):
+        self.__database_username = database_username
+        self.__database_password = database_password
+        self.__profilers_map = {}
 
-    def set_profile(self, neo4j_server_url, name):
-        if neo4j_server_url not in self.__profiler_dict:
-            self.__profiler_dict[neo4j_server_url] = Profiler(neo4j_server_url, self.__user, self.__password, name)
+    def set_profile(self, database_name: str = None, database_uri: str = None):
+        if database_name is None or len(database_name.strip()) == 0:
+            raise ValueError('"database_name" can not be None or empty.')
+        elif database_uri is None or len(database_uri.strip()) == 0:
+            raise ValueError('"database_uri" can not be None or empty.')
+        elif database_name not in self.__profilers_map:
+            self.__profilers_map[database_name] = Profiler(
+                neo4j_server_url=database_uri,
+                user=self.__database_username,
+                pwd=self.__database_password,
+                name=database_name)
+        return self.__profilers_map[database_name]
+
+    def get_profile(self, database_name: str = None, database_uri: str = None):
+        if database_name is None or len(database_name.strip()) == 0:
+            raise ValueError('"database_name" can not be None or empty.')
+        elif database_name in self.__profilers_map:
+            self.__profilers_map[database_name]
+        elif database_uri is None or len(database_uri.strip()) == 0:
+            raise ValueError('"database_uri" can not be None or empty.')
         else:
-            print("Profile already exists!!!")
+            # profile has not been set, set profile
+            return self.set_profile(database_name=database_name,
+                                    database_uri=database_uri)
 
-    def get_profile(self, neo4j_server_url):
-        if neo4j_server_url in self.__profiler_dict:
-            return self.__profiler_dict[neo4j_server_url]
-        else:
-            print("Profile does not exist!!!")
-
-    def get_distribution(self, _type, neo4j_server_url):
-        kh_profiler = self.get_profile(neo4j_server_url)
-        if _type == "node":
-            return kh_profiler.get_node_distribution()
-        return None
+    def has_profile(self, database_name: str = None):
+        if database_name is None or len(database_name.strip()) == 0:
+            raise ValueError('"database_name" can not be None or empty.')
+        elif database_name not in self.__profilers_map:
+            return False
+        return True
