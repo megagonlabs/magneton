@@ -16,15 +16,6 @@ class Graph:
     def stop(self):
         self.neo4j_conn.close()
 
-    def get_new_uuid(self):
-        return uuid.uuid4().hex
-
-    def get_df_uuid(self, key, a_dict):
-        if a_dict:
-            return a_dict[key]
-        uuid = self.get_new_uuid()
-        return uuid
-
     def get_node_attributes(self, node, row=None, column_index=None):
         if "attributes" not in node.keys():
             attributes = {}
@@ -32,75 +23,6 @@ class Graph:
                 attributes[p['name']] = row[column_index[p['column_id']]]
             return attributes
         return node["attributes"]
-
-    def generate_node_spec(self, node, row=None, column_index=None):
-        new_node = {}
-        new_node['label'] = node['label']
-        new_node['attributes'] = self.get_node_attributes(
-            node, row, column_index)
-        new_node['attributes']['uuid'] = self.get_new_uuid()
-        return new_node
-
-    def bulk_generate_relation_spec(self, relation, row):
-        spec = {}
-        if relation is not None and 'attributes' in relation:
-            for attribute in relation['attributes']:
-                if 'is_dataset_column' in attribute and attribute[
-                        'is_dataset_column']:
-                    spec[attribute['name']] = row[attribute['column_id']]
-                elif 'is_extractor_attribute' in attribute and attribute[
-                        'is_extractor_attribute']:
-                    for key, value in extractor_spec['attributes'].items():
-                        spec['extractor_{}'.format(key)] = value
-                else:
-                    spec[attribute['key']] = attribute['value']
-        elif relation is None and row is None:
-            ##TODO: handle and rewrite case
-            spec = {}
-        elif relation is None and 'properties' in row:
-            ##TODO: add relation properties
-            spec = {}
-        return spec
-
-    def add_metadata_node(self, node, additional_attributes=None):
-        attributes = self.get_node_attributes(node)
-        if additional_attributes:
-            attributes.update(additional_attributes)
-
-        existing_node = self.get_node(attributes, node['label'])
-        if existing_node is None:
-            transformed_node = self.generate_node_spec(node)
-            self.add_node(transformed_node)
-            return transformed_node['attributes']['uuid']
-        else:
-            return existing_node['uuid']
-
-# Add a node
-
-    def add_node(self, spec):
-        try:
-            self.neo4j_conn.create_node(spec['label'], spec['attributes'],
-                                        False)
-        except Exception as exception:
-            print('Error creating node {}'.format(spec['label']))
-            print('Exceptaion details: {}'.format(exception))
-            traceback.print_exc()
-
-# Add relation between src and target node given uuids
-
-    def add_relation(self, name, attribute, src_uuid, target_uuid):
-        try:
-            # Create a relation
-            if not self.neo4j_conn.has_relation_between(
-                    src_uuid, target_uuid, name):
-                # Also refer topic instance from answer span
-                self.neo4j_conn.create_relation(name, attribute, src_uuid,
-                                                target_uuid)
-                # print(span)
-        except Exception as exception:
-            print('Error creating {} relation'.format(name))
-            print('Exceptaion details: {}'.format(exception))
-            traceback.print_exc()
 
 # get existing node
 
@@ -113,127 +35,6 @@ class Graph:
             print('Error getting node {}'.format(attributes))
             print('Exceptaion details: {}'.format(exception))
             traceback.print_exc()
-
-# create node index on attribute
-
-    def create_index(self, label, attribute):
-        try:
-            self.neo4j_conn.create_index_on_node_property(label, attribute)
-        except Exception as exception:
-            print(
-                'Error creating index on node [{}] with property [{}]'.format(
-                    label, attribute))
-            print('Exceptaion details: {}'.format(exception))
-            traceback.print_exc()
-
-
-# bulk insert nodes
-
-    def bulk_insert_nodes(self, label, on_attribute, rows, batch_size=10000):
-        try:
-            self.neo4j_conn.bulk_create_nodes(label, on_attribute, rows,
-                                              batch_size)
-        except Exception as exception:
-            print('Error bulk creating node {}'.format(label))
-            print('Exception details: {}'.format(exception))
-            traceback.print_exc()
-
-    def bulk_insert_relations(self,
-                              name,
-                              source_label,
-                              source_attr,
-                              target_label,
-                              target_attr,
-                              rows,
-                              batch_size=10000):
-        try:
-            self.neo4j_conn.bulk_create_relations(name, source_label,
-                                                  source_attr, target_label,
-                                                  target_attr, rows,
-                                                  batch_size)
-        except Exception as exception:
-            print('Error bulk creating relation {}'.format(name))
-            print('Exception details: {}'.format(exception))
-            traceback.print_exc()
-
-    def ingest_metadata(self, metadata):
-        metadata_uuids = {}
-        extractor_spec = {}
-        extraction_spec = {}
-        data_source_spec = {}
-        for node in metadata['nodes']:
-            if node['label'] == 'DATASOURCE':
-                data_source_spec = node
-            if node['label'] == 'EXTRACTOR':
-                extractor_spec = node
-            if node['label'] == 'EXTRACTION':
-                extraction_spec = node
-                continue
-            metadata_uuids[node['label']] = self.add_metadata_node(node)
-
-        addtional_extraction_attribute = {
-            "source": data_source_spec["attributes"]["name"],
-            "type": data_source_spec["attributes"]["type"]
-        }
-        metadata_uuids[extraction_spec['label']] = self.add_metadata_node(
-            extraction_spec, addtional_extraction_attribute)
-        extraction_spec['attributes']['uuid'] = metadata_uuids[
-            extraction_spec['label']]
-        for relation in metadata['relations']:
-            self.add_relation(relation['name'],
-                              self.bulk_generate_relation_spec(relation, None),
-                              metadata_uuids[relation['source']],
-                              metadata_uuids[relation['target']])
-        return (metadata_uuids, extraction_spec)
-
-    def create_uuid_index(self, node, node_df, node_index_attr, renamed_cols):
-        attribute = ''
-        if len(node['index']['column_ids']) != 1:  #case 1: create uuid per row
-            attribute = 'uuid'
-            node_df['{}_uuid'.format(node['label'])] = [
-                self.get_new_uuid() for _ in range(len(node_df.index))
-            ]
-            node_index_attr[node['label']] = {
-                'column_id': '{}_uuid'.format(node['label'])
-            }
-        else:
-            attribute = node['index']['column_ids'][0]
-            node_index_attr[node['label']] = {'column_id': attribute}
-            unique_values = node_df[attribute].unique().tolist()
-            a_dict = {}
-            for uv in unique_values:
-                a_dict[uv] = self.get_new_uuid()
-            node_df['{}_uuid'.format(node['label'])] = node_df.apply(
-                lambda row: self.get_df_uuid(row[attribute], a_dict), axis=1)
-
-        if node['create_index']:
-            node_index_attr[node['label']]['renamed_col'] = renamed_cols[
-                node_index_attr[node['label']]['column_id']]
-            self.create_index(node['label'],
-                              node_index_attr[node['label']]['renamed_col'])
-        else:
-            node_index_attr[node['label']]['renamed_col'] = ''
-        return (node_df, node_index_attr)
-
-    def bulk_create_metadata_relations(self, args, node, node_df,
-                                       node_index_attr, metadata_uuids,
-                                       extraction_spec):
-        extraction_relation_df = node_df[[
-            node_index_attr[node['label']]['renamed_col']
-        ]].copy()
-        extraction_relation_df['to'] = node_df.apply(
-            lambda row: extraction_spec['attributes']['uuid'], axis=1)
-        extraction_relation_df.columns = ['from', 'to']
-        # TODO: allow properties with these metadata releations
-        extraction_relation_df['properties'] = [{
-            "confidence": 1
-        } for _ in range(len(node_df.index))]
-
-        self.bulk_insert_relations(
-            'HAS_EXTRACTION_TYPE', node['label'],
-            node_index_attr[node['label']]['renamed_col'],
-            extraction_spec['label'], 'uuid',
-            extraction_relation_df.to_dict('records'), args.batch_size)
 
     def get_stat_by_node_label(self, skip_metadata=True):
         exclude_labels = []
@@ -324,31 +125,6 @@ class Graph:
         if res['value']["type"] == 'relationship':
             return True
         return False
-
-    def create_undirected_graph(self, graph_name, nodes, relation,
-                                relation_weight):
-        relation_str = ('{' + 'similarity:{' + 'type: "' + relation + '",' +
-                        'orientation: "UNDIRECTED",' + 'properties:["' +
-                        relation_weight + '"]' + '}}')
-
-        query = 'CALL gds.graph.create("{}",{},{})'.format(
-            graph_name, nodes, relation_str)
-        return self.neo4j_conn.run_query_kh(query)
-
-    def find_communities(self, graph_name, similarity_relation_types,
-                         sim_relation_property_name, node_name_property):
-        query = ('CALL gds.louvain.stream("' + graph_name + '",' + '{' +
-                 'relationshipWeightProperty: "' + sim_relation_property_name +
-                 '",' + 'relationshipTypes: ["' + similarity_relation_types +
-                 '"]' + '}) YIELD nodeId, communityId RETURN communityId, ' +
-                 'collect(gds.util.asNode(nodeId).' + node_name_property +
-                 ') as members')
-        result = self.neo4j_conn.run_query_kh(query)
-        result_list = json.loads(result)
-        result_df = pd.DataFrame(result_list)
-        #result_df['len'] = result_df['members'].str.len()
-        #result_df = result_df.sort_values(by='len', ascending=False).drop(columns='len')
-        return result_df
 
     def get_graph_edge_list(self,
                             exclude_metagraph=False,
