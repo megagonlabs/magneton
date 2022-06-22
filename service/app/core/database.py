@@ -768,7 +768,6 @@ class Database:
 
     def _run_query(self, tx, query):
         resultset = tx.run(query)
-        # TODO: BUG - AttributeError: 'Result' object has no attribute 'records'
         records = resultset.records()
         results = []
         for record in records:
