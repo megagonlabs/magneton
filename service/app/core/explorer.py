@@ -25,7 +25,7 @@ class Explorer:
         if database_name is None or len(database_name.strip()) == 0:
             raise ValueError('"database_name" can not be None or empty.')
         elif database_name in self.__profilers_map:
-            self.__profilers_map[database_name]
+            return self.__profilers_map[database_name]
         elif database_uri is None or len(database_uri.strip()) == 0:
             raise ValueError('"database_uri" can not be None or empty.')
         else:
