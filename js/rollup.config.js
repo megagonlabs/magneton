@@ -15,7 +15,7 @@ const minify = process.argv[process.argv.length - 1] === "minify";
 export default {
   input: "src/index.ts",
   output: {
-    file: `../kyurem_ui/bundle${minify ? ".min" : ""}.js`,
+    file: `../kyurem_client/bundle${minify ? ".min" : ""}.js`,
     format: "esm",
   },
   onwarn,
