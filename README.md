@@ -11,7 +11,7 @@ from kyurem_client import ...
 - Under **/js** folder
   - Run `npm install`
   - Run `npm run watch`: this automatically rebundles JS components for you; then restart the notebook to test
-- Periodically delete JS files created by kyurem-ui under `/Users/[username]/Library/Application Support/idom-jupyter/`
+- Periodically delete JS files created by kyurem-client under `/Users/[username]/Library/Application Support/idom-jupyter/`
   - run `whoami` to get username from the terminal (macOS)
 
 
