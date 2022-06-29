@@ -17,6 +17,8 @@
       ],
       "extensions": [
         "js",
+        "ts",
+        "tsx",
         "css"
       ]
     }
