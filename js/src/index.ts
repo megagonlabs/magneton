@@ -18,5 +18,5 @@ export function bind(node: Element, config: any) {
   };
 }
 
-import { Distribution } from "./distribution";
+import { Distribution } from "./components/distribution";
 export { Distribution };
