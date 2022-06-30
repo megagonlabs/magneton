@@ -14,3 +14,18 @@ class Profiler:
         for key, value in distribution.items():
             distribution_list.append({"x": key, "y": value})
         return distribution_list
+
+    def get_relation_distribution(self):
+        distribution = self.graph.relation_count()
+        distribution_list = []
+        for key, value in distribution.items():
+            distribution_list.append({"x": key, "y": value})
+        return distribution_list
+
+    def get_node_granularity_distributions(self, nodeType=None):
+        distribution = self.graph.get_stat_by_node_granularity(nodeType)
+        distribution_list = []
+        for key, value in distribution.items():
+            distribution_list.append({"x": key, "y": value})
+        return distribution_list
+        
