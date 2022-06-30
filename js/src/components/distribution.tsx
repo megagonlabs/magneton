@@ -1,5 +1,5 @@
 import React from "react";
-import { Base } from "./base";
+import { Base } from "../base";
 import BarChart from "./charts/bar-chart";
 import { Data } from "./types";
 
