@@ -12,7 +12,7 @@ package = {
     "url":
     "https://github.com/rit-git/kyurem",
     "author":
-    "Sajjadur Rahman",
+    "Megagon Labs",
     "author_email":
     "sajjadur@megagon.ai",
     "license":
@@ -22,6 +22,10 @@ package = {
     "install_requires": [
         "idom==0.38.1", 
         "idom-jupyter==0.7.6",
+        "boto3==1.20.46",
+        "Flask==2.0.2",
+        "Flask_Cors==3.0.10",
+        "werkzeug==2.0.2",
         "jsonmerge==1.7.0",
         "jsonpath==0.82",
         "jsonpath-rw==1.4.0",
