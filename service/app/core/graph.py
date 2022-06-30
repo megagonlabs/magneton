@@ -49,26 +49,20 @@ class Graph:
                     nodeType)
         return nodeTypeCount
 
-    def get_stat_by_node_granularity(self, skip_list, by_label=True):
-        results = self.neo4j_conn.get_node_types()
+    def get_stat_by_node_granularity(self, nodeType=None):
         nodeGranularityCount = {}
         node_property = 'type'
         values = ['class', 'instance']
-        if not by_label:
-            for value in values:
+
+        for value in values:
+            if nodeType:
                 nodeGranularityCount[
                     value] = self.neo4j_conn.get_count_by_type_attribute_value(
-                        None, node_property, value)
-            return nodeGranularityCount
-
-        for result in results:
-            nodeType = result['nodeType'][0]
-            if nodeType not in skip_list:
-                nodeGranularityCount[nodeType] = {}
-                for value in values:
-                    nodeGranularityCount[nodeType][
-                        value] = self.neo4j_conn.get_count_by_type_attribute_value(
-                            nodeType, node_property, value)
+                        nodeType, node_property, value)
+            else:
+                nodeGranularityCount[
+                    value] = self.neo4j_conn.get_count_by_type_attribute_value(
+                            None, node_property, value)
         return nodeGranularityCount
 
     def get_children_stat_by_node_type(self, node_type):

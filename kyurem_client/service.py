@@ -31,3 +31,24 @@ class Service:
         else:
             raise Exception(response.text)
         return parsed_result
+
+    def get_relation_distribution(self):
+        path = self.get_service_endpoint('get_relation_distribution')
+        payload = self.get_base_payload()
+        response = get_request(path, json=payload)
+        if response.status_code == 200:
+            parsed_result = response.json()
+        else:
+            raise Exception(response.text)
+        return parsed_result
+
+    def get_node_granularity_distribution(self, node_type):
+        path = self.get_service_endpoint('get_node_granularity_distribution').format(
+            nodetype=node_type)
+        payload = self.get_base_payload()
+        response = get_request(path, json=payload)
+        if response.status_code == 200:
+            parsed_result = response.json()
+        else:
+            raise Exception(response.text)
+        return parsed_result
