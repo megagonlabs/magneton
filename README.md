@@ -46,22 +46,18 @@ $ conda activate kyurem_env
 Say the user wants to view node distribution in the knowledge graph.
 
 ```python
-# issue a request to get node distribution of a KH
-import requests
-response = requests.get(
-                'http://127.0.0.1:5000/distributions/node',
-                json={
-                 'database_name': $KB_NAME_AWS_Knowledge_Hub
-                })
-if response.status_code == 200:
-    node_dist = response.json()
-else:
-    print(response.text) 
+# To use library modules
+from kyurem_client import Distribution, Service
 ```
 
 ```python
-# To use library modules
-from kyurem_client import Distribution
+# create service for serving requests
+service = Service(kh = $cobrakbplatform_KB_NAME)
+```
+
+```python
+# get node distribution
+node_dist = service.get_node_distribution()
 ```
 
 ```python
