@@ -1,8 +1,8 @@
 import * as d3 from "d3";
 import React, { useRef, useEffect } from "react";
-import { Data } from "../types";
+import { CategoricalData } from "../../types/data-types";
 
-const BarChart = ({ data }: { data: Data }) => {
+const BarChart = ({ data }: { data: CategoricalData}) => {
   const ref = useRef<SVGSVGElement>(null);
 
   useEffect(() => {

@@ -5,6 +5,7 @@ import injectProcessEnv from "rollup-plugin-inject-process-env";
 import { terser } from "rollup-plugin-terser";
 import json from "@rollup/plugin-json";
 import typescript from "@rollup/plugin-typescript";
+import ignore from "rollup-plugin-ignore";
 
 const onwarn = (warning) => {
   if (warning.code !== "CIRCULAR_DEPENDENCY") {
@@ -20,6 +21,7 @@ export default {
   },
   onwarn,
   plugins: [
+    ignore(["underscore"]),
     nodeResolve({ jsnext: true, browser: true }),
     json(),
     babel({
