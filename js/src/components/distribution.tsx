@@ -1,9 +1,9 @@
 import React from "react";
 import { Base } from "../base";
+import { CategoricalData } from "../types/data-types";
 import BarChart from "./charts/bar-chart";
-import { Data } from "./types";
 
-export const Distribution = ({ data }: { data: Data }) => {
+export const Distribution = ({ data }: { data: CategoricalData }) => {
   return (
     <Base>
       <BarChart data={data} />

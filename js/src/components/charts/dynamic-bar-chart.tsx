@@ -1,12 +1,17 @@
 import * as d3 from "d3";
 import React, { useRef, useEffect } from "react";
-import { Data } from "../types";
-import { ipy_function } from "../constant";
+import { ipy_function } from "../../lib/ipy-utils";
+import { ServiceWrapper } from "../../lib/service-wrapper";
+import { CategoricalData } from "../../types/data-types";
 
-const DynamicBarChart = (payload: any) => {
+const DynamicBarChart = ({
+  data,
+  service,
+}: {
+  data: CategoricalData;
+  service: ServiceWrapper;
+}) => {
   const ref = useRef<SVGSVGElement>(null);
-  const data = payload.data;
-  const service = payload.service;
 
   useEffect(() => {
     // set the dimensions and margins of the graph
@@ -44,23 +49,13 @@ const DynamicBarChart = (payload: any) => {
       .attr("width", x.bandwidth())
       .attr("y", (d) => y(d.y))
       .attr("height", (d) => height - y(d.y))
-      .on("click", function(d, i) {
+      .on("click", async (d) => {
         // Do something on click
         // Remember, we drew random barcharts?
         const barObj = d.target.__data__.x;
         console.log(barObj);
-        console.log(service);
-        const get_granularity_distribution = `${service}.get_node_granularity_distribution(node_type='${barObj}')`;
-        ipy_function(get_granularity_distribution)
-            .then((result) => {
-              const clicked_distribution = JSON.parse(result);
-              console.log(clicked_distribution);
-            })
-            .catch((error) => {
-                console.log("Bar click error!!!")
-            });
-
-
+        const dist = await service.get_node_granularity_distribution(barObj);
+        console.log(dist);
       });
 
     // add the x Axis
