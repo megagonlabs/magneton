@@ -55,7 +55,7 @@ class Graph:
         values = ['class', 'instance']
 
         for value in values:
-            if nodeType:
+            if nodeType != 'all':
                 nodeGranularityCount[
                     value] = self.neo4j_conn.get_count_by_type_attribute_value(
                         nodeType, node_property, value)

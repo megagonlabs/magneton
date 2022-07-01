@@ -22,6 +22,7 @@ package = {
     "install_requires": [
         "idom==0.38.1", 
         "idom-jupyter==0.7.6",
+        "varname==0.8.1",
         "boto3==1.20.46",
         "Flask==2.0.2",
         "Flask_Cors==3.0.10",

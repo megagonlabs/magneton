@@ -42,9 +42,13 @@ class Service:
             raise Exception(response.text)
         return parsed_result
 
-    def get_node_granularity_distribution(self, node_type):
+    def get_node_granularity_distribution(self, node_type=None):
+        if node_type is None:
+            nodetype = 'all'
+        else:
+            nodetype = node_type
         path = self.get_service_endpoint('get_node_granularity_distribution').format(
-            nodetype=node_type)
+            nodetype=nodetype)
         payload = self.get_base_payload()
         response = get_request(path, json=payload)
         if response.status_code == 200:
