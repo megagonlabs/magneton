@@ -78,3 +78,4 @@ def check_profile():
 
 
 from app.routes import distribution
+from app.routes import graph

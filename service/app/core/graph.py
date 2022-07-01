@@ -163,4 +163,4 @@ class Graph:
                 "weight": value,
                 "label": _type
             })
-        return pd.DataFrame(edge_list)
+        return edge_list
