@@ -46,4 +46,5 @@ except FileExistsError:
     )
 
 from .widgets.Distribution import Distribution
+from .widgets.DualDistribution import DualDistribution
 from .service import Service

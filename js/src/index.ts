@@ -19,4 +19,6 @@ export function bind(node: Element, config: any) {
 }
 
 import { Distribution } from "./components/distribution";
+import { DualDistribution } from "./components/dual-distribution";
 export { Distribution };
+export { DualDistribution };
