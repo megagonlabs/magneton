@@ -12,8 +12,6 @@ class Schema:
     def set_data(self, edge_list, node_radius=15, link_distance=5, collision_scale=10, link_width_scale=1):
         df = pd.DataFrame(edge_list)
 
-        edge_weight_dict_key = df.columns.values[2]
-        edge_name_dict_key = df.columns.values[3]
         nodes = list(set(df['source'].unique()).union(set(df['target'].unique())))
         graph_json_nodes = [{'id': n} for n in nodes]
         graph_json_links = edge_list
@@ -25,8 +23,6 @@ class Schema:
 
         self.__data['graph_json_links'] = graph_json_links
         self.__data['graph_json_nodes'] = graph_json_nodes
-        self.__data['edge_weight_dict_key'] = edge_weight_dict_key
-        self.__data['edge_name_dict_key'] = edge_name_dict_key
 
     @idom.component
     def show(self):
