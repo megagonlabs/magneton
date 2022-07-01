@@ -28,4 +28,7 @@ class Profiler:
         for key, value in distribution.items():
             distribution_list.append({"x": key, "y": value})
         return distribution_list
+
+    def get_kh_edge_list(self):
+        return self.graph.get_graph_edge_list()
         

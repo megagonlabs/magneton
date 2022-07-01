@@ -56,3 +56,13 @@ class Service:
         else:
             raise Exception(response.text)
         return parsed_result
+
+    def get_kh_edge_list(self):
+        path = self.get_service_endpoint('get_edge_list')
+        payload = self.get_base_payload()
+        response = get_request(path, json=payload)
+        if response.status_code == 200:
+            parsed_result = response.json()
+        else:
+            raise Exception(response.text)
+        return parsed_result
