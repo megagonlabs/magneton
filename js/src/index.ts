@@ -20,5 +20,7 @@ export function bind(node: Element, config: any) {
 
 import { Distribution } from "./components/distribution";
 import { DualDistribution } from "./components/dual-distribution";
+import { LinkedDistribution } from "./components/linked-distribution";
 export { Distribution };
 export { DualDistribution };
+export { LinkedDistribution };
