@@ -2,7 +2,7 @@ import * as d3 from "d3";
 import React from "react";
 import { ServiceWrapper } from "../../lib/service-wrapper";
 import { CategoricalData } from "../../types/data-types";
-import { D3Chart } from "./d3-chart";
+import { D3Chart } from "./d3-helpers/d3-chart";
 
 const DynamicBarChart = ({
   data,
