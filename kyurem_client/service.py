@@ -32,6 +32,17 @@ class Service:
             raise Exception(response.text)
         return parsed_result
 
+    def get_node_degree_distributions(self, nodetype):
+        path = self.get_service_endpoint('get_node_degree_distribution').format(
+            nodetype=nodetype)
+        payload = self.get_base_payload()
+        response = get_request(path, json=payload)
+        if response.status_code == 200:
+            parsed_result = response.json()
+        else:
+            raise Exception(response.text)
+        return parsed_result
+
     def get_relation_distribution(self):
         path = self.get_service_endpoint('get_relation_distribution')
         payload = self.get_base_payload()
@@ -48,6 +59,21 @@ class Service:
         else:
             nodetype = node_type
         path = self.get_service_endpoint('get_node_granularity_distribution').format(
+            nodetype=nodetype)
+        payload = self.get_base_payload()
+        response = get_request(path, json=payload)
+        if response.status_code == 200:
+            parsed_result = response.json()
+        else:
+            raise Exception(response.text)
+        return parsed_result
+
+    def get_children_node_distributions(self, node_type=None):
+        if node_type is None:
+            nodetype = 'all'
+        else:
+            nodetype = node_type
+        path = self.get_service_endpoint('get_children_node_distributions').format(
             nodetype=nodetype)
         payload = self.get_base_payload()
         response = get_request(path, json=payload)
