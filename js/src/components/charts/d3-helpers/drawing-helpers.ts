@@ -29,7 +29,7 @@ export const helpers = ({
   yAxis:
     <A extends d3.AxisScale<any>>(y: A) =>
     <S extends Selection>(g: S) =>
-      g.call(d3.axisLeft(y)),
+      g.transition().call(d3.axisLeft(y)),
 
   bars:
     <X, Y extends NumberValue>(
@@ -42,8 +42,12 @@ export const helpers = ({
         .selectAll("rect")
         .data(data)
         .join("rect")
-        .attr("x", (d) => x(d.x)!)
-        .attr("width", x.bandwidth())
-        .attr("y", (d) => y(d.y))
-        .attr("height", (d) => height - y(d.y)),
+        .call((g) =>
+          g
+            .transition()
+            .attr("x", (d) => x(d.x)!)
+            .attr("width", x.bandwidth())
+            .attr("y", (d) => y(d.y))
+            .attr("height", (d) => height - y(d.y))
+        ),
 });

@@ -1,16 +1,19 @@
 import * as d3 from "d3";
-import React from "react";
-import { ServiceWrapper } from "../../lib/service-wrapper";
-import { CategoricalData } from "../../types/data-types";
+import React, { useState } from "react";
+import { CategoricalDatum } from "../../types/data-types";
 import { D3Chart } from "./d3-helpers/d3-chart";
 
 const DynamicBarChart = ({
   data,
-  service,
+  onSelect,
 }: {
-  data: CategoricalData;
-  service: ServiceWrapper;
+  data: CategoricalDatum[];
+  onSelect?: (d: CategoricalDatum) => void;
 }) => {
+  const [selectedDatum, setSelectedDatum] = useState<CategoricalDatum | null>(
+    null
+  );
+
   return (
     <D3Chart
       margin={{ top: 20, right: 20, bottom: 100, left: 40 }}
@@ -26,14 +29,13 @@ const DynamicBarChart = ({
 
         // append the rectangles for the bar chart
         const bars = helpers.bars(data, x, y)(g);
-        bars.on("click", async (d) => {
-          // Do something on click
-          // Remember, we drew random barcharts?
-          const barObj = d.target.__data__.x;
-          console.log(barObj);
-          const dist = await service.get_node_granularity_distribution(barObj);
-          console.log(dist);
-        });
+        bars
+          .style("stroke", (d) => (d === selectedDatum ? "#ff0000" : ""))
+          .style("stroke-width", (d) => (d === selectedDatum ? "2px" : "0"))
+          .on("click", async (e, d) => {
+            onSelect?.(d);
+            setSelectedDatum(d);
+          });
 
         // add the x Axis
         gx.call(helpers.xAxis(x));
@@ -41,7 +43,7 @@ const DynamicBarChart = ({
         // add the y Axis
         gy.call(helpers.yAxis(y));
       }}
-      drawDeps={[]}
+      drawDeps={[data, selectedDatum]}
     />
   );
 };

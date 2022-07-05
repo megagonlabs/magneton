@@ -1,9 +1,9 @@
 import * as d3 from "d3";
 import React from "react";
-import { CategoricalData } from "../../types/data-types";
+import { CategoricalDatum } from "../../types/data-types";
 import { D3Chart } from "./d3-helpers/d3-chart";
 
-const BarChart = ({ data }: { data: CategoricalData }) => {
+const BarChart = ({ data }: { data: CategoricalDatum[] }) => {
   return (
     <D3Chart
       margin={{ top: 20, right: 20, bottom: 100, left: 40 }}
@@ -26,7 +26,7 @@ const BarChart = ({ data }: { data: CategoricalData }) => {
         // add the y Axis
         gy.call(helpers.yAxis(y));
       }}
-      drawDeps={[]}
+      drawDeps={[data]}
     />
   );
 };
