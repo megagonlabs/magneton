@@ -36,10 +36,8 @@ class Graph:
             print('Exceptaion details: {}'.format(exception))
             traceback.print_exc()
 
-    def get_stat_by_node_label(self, skip_metadata=True):
+    def get_stat_by_node_label(self):
         exclude_labels = []
-        if skip_metadata:
-            exclude_labels = self.get_metatadata_nodes()
         results = self.neo4j_conn.get_node_types()
         nodeTypeCount = {}
         for result in results:
@@ -65,12 +63,15 @@ class Graph:
                             None, node_property, value)
         return nodeGranularityCount
 
-    def get_children_stat_by_node_type(self, node_type):
-        source_label = node_type
+    def get_children_stat_by_node_type(self, nodeType=None):
+        if nodeType == 'all':
+            return self.get_stat_by_node_label()
+
+        source_label = nodeType
         source_filter = 'type'
         source_filter_value = 'class'
 
-        dest_label = node_type
+        dest_label = nodeType
         dest_filter = 'type'
         dest_filter_value = 'instance'
 
@@ -101,14 +102,28 @@ class Graph:
             relation_dist[result['relation']] = result['count']
         return dict(sorted(relation_dist.items(), key=lambda item: item[1]))
 
-    def get_metatadata_nodes(self):
-        #TODO: add a property to nodes "data_plane: {'meta_data','value_data'}"
-        spec_path = '../../data/read_taxo.json'
-        f = open(spec_path)
-        json_spec = json.load(f)
-        meta_nodes = json_spec['metadata']['nodes']
-        meta_nodes_labels = [node['label'] for node in meta_nodes]
-        return meta_nodes_labels
+    def get_node_degree_distributions(self, nodeType):
+        results_in = self.neo4j_conn.get_node_degree_distribution(nodeType, 'in')
+        results_out = self.neo4j_conn.get_node_degree_distribution(nodeType, 'out')
+        relation_dist = {}
+
+        temp_dict = {}
+        for result in results_in:
+            temp_dict[result['relation']] = result['count']
+
+        in_ls = sorted(temp_dict.items(), key=lambda item: item[1])
+
+        temp_dict = {}
+        for result in results_out:
+            temp_dict[result['relation']] = result['count']
+
+        out_ls = sorted(temp_dict.items(), key=lambda item: item[1])
+
+        for k,v in in_ls:
+            relation_dist[k] = {'count':v, 'type':'in'}
+        for k,v in out_ls:
+            relation_dist[k] = {'count':v, 'type':'out'}
+        return relation_dist
 
     def is_skippable(self, res, exclude_labels, include_labels):
         label_a = res['key']
@@ -121,7 +136,6 @@ class Graph:
         return False
 
     def get_graph_edge_list(self,
-                            exclude_metagraph=False,
                             include_labels=None):
         query = ('call apoc.meta.schema() ' + 'YIELD value ' +
                  'UNWIND keys(value) AS key ' +
@@ -130,8 +144,7 @@ class Graph:
         relation_dict = {}
         result_list = json.loads(results)
         exclude_labels = []
-        if exclude_metagraph:
-            exclude_labels = self.get_metatadata_nodes()
+        
         for res in result_list:
             if self.is_skippable(res, exclude_labels, include_labels):
                 continue

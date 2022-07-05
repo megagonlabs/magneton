@@ -8,8 +8,8 @@ class Profiler:
                            pwd)
         self.name = name
 
-    def get_node_distribution(self, skip_metadata=False):
-        distribution = self.graph.get_stat_by_node_label(skip_metadata)
+    def get_node_distribution(self):
+        distribution = self.graph.get_stat_by_node_label()
         distribution_list = []
         for key, value in distribution.items():
             distribution_list.append({"x": key, "y": value})
@@ -27,6 +27,20 @@ class Profiler:
         distribution_list = []
         for key, value in distribution.items():
             distribution_list.append({"x": key, "y": value})
+        return distribution_list
+
+    def get_children_node_distributions(self, nodeType=None):
+        distribution = self.graph.get_children_stat_by_node_type(nodeType)
+        distribution_list = []
+        for key, value in distribution.items():
+            distribution_list.append({"x": key, "y": value})
+        return distribution_list
+
+    def get_node_degree_distributions(self, nodeType):
+        distribution = self.graph.get_node_degree_distributions(nodeType)
+        distribution_list = []
+        for key, value in distribution.items():
+            distribution_list.append({"x": key, "y": value["count"], "type":value["type"]})
         return distribution_list
 
     def get_kh_edge_list(self):

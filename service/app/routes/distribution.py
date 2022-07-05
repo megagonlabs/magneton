@@ -15,3 +15,13 @@ def get_distribution(type: str):
 def get_node_granularity_distributions(nodetype: str):
     result = g.profile.get_node_granularity_distributions(nodetype)
     return make_response(jsonify(result), 200)
+
+@app.get('/children_distributions/<nodetype>')
+def get_node_children_node_distributions(nodetype: str):
+    result = g.profile.get_children_node_distributions(nodetype)
+    return make_response(jsonify(result), 200)
+
+@app.get('/degree_distributions/<nodetype>')
+def get_node_ode_degree_distributions(nodetype: str):
+    result = g.profile.get_node_degree_distributions(nodetype)
+    return make_response(jsonify(result), 200)
