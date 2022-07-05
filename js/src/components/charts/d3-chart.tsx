@@ -3,11 +3,14 @@ import Box from "@mui/system/Box";
 import * as d3 from "d3";
 import React, { useRef, useEffect } from "react";
 import { useContentRect } from "../../lib/use-content-rect";
+import { helpers } from "./d3-helpers";
 
 export type DrawingParams = {
   width: number;
   height: number;
   groups: d3.Selection<SVGGElement, unknown, d3.BaseType, unknown>[];
+
+  helpers: ReturnType<typeof helpers>;
 };
 
 /**
@@ -69,10 +72,13 @@ export const D3Chart = ({
 
     if (gRef.current) {
       // Call draw on every update
+      const width = outerWidth - margin.left - margin.right;
+      const height = outerHeight - margin.bottom - margin.top;
       draw?.({
-        width: outerWidth - margin.left - margin.right,
-        height: outerHeight - margin.bottom - margin.top,
+        width,
+        height,
         groups: gRef.current,
+        helpers: helpers({ width, height }),
       });
     }
   }, [outerWidth, outerHeight, ...drawDeps]);
