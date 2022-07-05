@@ -20,17 +20,17 @@ export const D3Chart = ({
   margin = { top: 0, right: 0, bottom: 0, left: 0 },
   initialize,
   draw,
-  drawDeps = [],
+  drawDeps,
 
   style,
   sx,
 }: {
   margin?: { top: number; right: number; bottom: number; left: number };
-  initialize?: (
+  initialize: (
     g: d3.Selection<SVGGElement, unknown, null, unknown>
   ) => d3.Selection<SVGGElement, unknown, d3.BaseType, unknown>[] | void;
-  draw?: (params: DrawingParams) => void;
-  drawDeps?: unknown[];
+  draw: (params: DrawingParams) => void;
+  drawDeps: unknown[];
 
   style?: React.CSSProperties;
   sx?: SystemCssProperties;

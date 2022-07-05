@@ -56,6 +56,7 @@ const DynamicBarChart = ({
         // add the y Axis
         gy.call(d3.axisLeft(y));
       }}
+      drawDeps={[]}
     />
   );
 };
