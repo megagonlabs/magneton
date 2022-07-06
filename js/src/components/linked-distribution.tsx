@@ -5,34 +5,40 @@ import BarChart from "./charts/bar-chart";
 import Stack from "@mui/material/Stack";
 import { ServiceWrapper } from "../lib/service-wrapper";
 import { CategoricalDatum } from "../types/data-types";
+import { useAsync } from "react-use";
+import { LoadingOverlay } from "./misc/loading-overlay";
 
 export const LinkedDistribution = ({
   data,
   ipy_service,
 }: {
-  data: { node: CategoricalDatum[]; granularity: CategoricalDatum[] };
+  data: { node: CategoricalDatum[] };
   ipy_service: string;
 }) => {
-  
-  const [granularity, setGranularity] = useState<CategoricalDatum[]>(
-    data.granularity
-  );
-
-  const node = data.node;
   const service = useMemo(() => new ServiceWrapper(ipy_service), [ipy_service]);
+
+  const [selectedType, setSelectedType] = useState<string | undefined>();
+  const {
+    loading,
+    error,
+    value = [],
+  } = useAsync(
+    () => service.get_node_granularity_distribution(selectedType),
+    [selectedType]
+  );
 
   return (
     <Base>
       <Stack direction="row" spacing={2}>
         <DynamicBarChart
-          data={node}
-          onSelect={async (d) => {
-            setGranularity(
-              await service.get_node_granularity_distribution(d.x)
-            );
+          data={data.node}
+          onSelect={(d) => {
+            setSelectedType(d.x);
           }}
         />
-        <BarChart data={granularity} />
+        <LoadingOverlay sx={{ width: "100%" }} loading={loading} error={error}>
+          <BarChart data={value} />
+        </LoadingOverlay>
       </Stack>
     </Base>
   );
