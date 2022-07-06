@@ -16,9 +16,13 @@ type AttributeValue<D> =
 export const helpers = ({
   width,
   height,
+  prevWidth,
+  prevHeight,
 }: {
   width: number;
   height: number;
+  prevWidth?: number;
+  prevHeight?: number;
 }) => ({
   xAxis:
     <A extends d3.AxisScale<any>>(x: A) =>
@@ -34,8 +38,14 @@ export const helpers = ({
 
   yAxis:
     <A extends d3.AxisScale<any>>(y: A) =>
-    <S extends Selection>(g: S) =>
-      g.transition().call(d3.axisLeft(y)),
+    <S extends Selection>(g: S) => {
+      if (prevWidth !== width || prevHeight !== height) {
+        // No transition animation if bounding box changed
+        return g.call(d3.axisLeft(y));
+      } else {
+        return g.transition().call(d3.axisLeft(y));
+      }
+    },
 
   bars:
     <X, Y extends NumberValue>(
@@ -45,12 +55,6 @@ export const helpers = ({
       color: AttributeValue<{ x: X; y: Y }> = d3["schemeCategory10"][0]
     ) =>
     <S extends Selection>(g: S) => {
-      const rects = g.selectAll("rect");
-
-      let prevData = rects.data() as { x: X; y: Y }[];
-      if (!Array.isArray(prevData)) prevData = [];
-      const prevX = new Set(prevData.map((d) => d.x));
-
       const applyAttributes = (g: any) =>
         (g as Selection<{ x: X; y: Y }>)
           .attr("x", (d) => x(d.x)!)
@@ -59,19 +63,34 @@ export const helpers = ({
           .attr("height", (d) => height - y(d.y))
           .attr("fill", color as any);
 
-      return rects
-        .data(data)
-        .join("rect")
-        .call((g) =>
-          // Transition on previously existing categories
-          g
-            .filter((d) => prevX.has(d.x))
-            .transition()
-            .call(applyAttributes)
-        )
-        .call((g) =>
-          // Instantly apply affects to new categories
-          g.filter((d) => !prevX.has(d.x)).call(applyAttributes)
-        );
+      if (prevWidth !== width || prevHeight !== height) {
+        // No transition animation if bounding box changed
+        return g
+          .selectAll("rect")
+          .data(data)
+          .join("rect")
+          .call(applyAttributes);
+      } else {
+        const rects = g.selectAll("rect");
+
+        let prevData = rects.data() as { x: X; y: Y }[];
+        if (!Array.isArray(prevData)) prevData = [];
+        const prevX = new Set(prevData.map((d) => d.x));
+
+        return rects
+          .data(data)
+          .join("rect")
+          .call((g) =>
+            // Transition only on previously existing categories
+            g
+              .filter((d) => prevX.has(d.x))
+              .transition()
+              .call(applyAttributes)
+          )
+          .call((g) =>
+            // Instantly apply affects to new categories
+            g.filter((d) => !prevX.has(d.x)).call(applyAttributes)
+          );
+      }
     },
 });

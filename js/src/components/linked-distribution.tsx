@@ -1,5 +1,4 @@
 import React, { useMemo, useState } from "react";
-import { Base } from "../base";
 import DynamicBarChart from "./charts/dynamic-bar-chart";
 import BarChart from "./charts/bar-chart";
 import Stack from "@mui/material/Stack";
@@ -7,6 +6,8 @@ import { ServiceWrapper } from "../lib/service-wrapper";
 import { CategoricalDatum } from "../types/data-types";
 import { useAsync } from "react-use";
 import { LoadingOverlay } from "./misc/loading-overlay";
+import { RootPane } from "./panes/root-pane";
+import Box from "@mui/system/Box";
 
 export const LinkedDistribution = ({
   data,
@@ -28,8 +29,8 @@ export const LinkedDistribution = ({
   );
 
   return (
-    <Base>
-      <Stack direction="row" spacing={2}>
+    <RootPane>
+      <Box display="flex" height="100%">
         <DynamicBarChart
           data={data.node}
           onSelect={(d) => {
@@ -39,7 +40,7 @@ export const LinkedDistribution = ({
         <LoadingOverlay sx={{ width: "100%" }} loading={loading} error={error}>
           <BarChart data={value} />
         </LoadingOverlay>
-      </Stack>
-    </Base>
+      </Box>
+    </RootPane>
   );
 };

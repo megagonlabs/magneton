@@ -1,8 +1,8 @@
 import React from "react";
-import { Base } from "../base";
 import BarChart from "./charts/bar-chart";
-import Stack from "@mui/material/Stack";
 import { CategoricalDatum } from "../types/data-types";
+import { RootPane } from "./panes/root-pane";
+import Box from "@mui/system/Box";
 
 export const DualDistribution = ({
   data,
@@ -12,11 +12,11 @@ export const DualDistribution = ({
   const node = data.node;
   const granularity = data.granularity;
   return (
-    <Base>
-      <Stack direction="row" spacing={2}>
+    <RootPane>
+      <Box display="flex" height="100%">
         <BarChart data={node} />
         <BarChart data={granularity} />
-      </Stack>
-    </Base>
+      </Box>
+    </RootPane>
   );
 };
