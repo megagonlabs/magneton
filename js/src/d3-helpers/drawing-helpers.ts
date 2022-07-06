@@ -16,19 +16,17 @@ type AttributeValue<D> =
 export const helpers = ({
   width,
   height,
-  prevWidth,
-  prevHeight,
 }: {
   width: number;
   height: number;
-  prevWidth?: number;
-  prevHeight?: number;
 }) => ({
   xAxis:
     <A extends d3.AxisScale<any>>(x: A) =>
     <S extends Selection>(g: S) =>
       g
-        .attr("transform", "translate(0," + height + ")")
+        .call((g) =>
+          g.transition().attr("transform", "translate(0," + height + ")")
+        )
         .call(d3.axisBottom(x))
         .selectAll("text")
         .style("text-anchor", "end")
