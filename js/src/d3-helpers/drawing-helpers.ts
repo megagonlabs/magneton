@@ -2,6 +2,12 @@ import * as d3 from "d3";
 import { NumberValue } from "d3";
 
 type Selection = d3.Selection<any, any, any, any>;
+type AttributeValue<D> =
+  | string
+  | number
+  | boolean
+  | null
+  | ((d: D) => string | number | boolean | null);
 
 /**
  * A collection of helper functions for making d3 charts while
@@ -35,7 +41,8 @@ export const helpers = ({
     <X, Y extends NumberValue>(
       data: { x: X; y: Y }[],
       x: d3.ScaleBand<X>,
-      y: d3.ScaleLinear<number, number>
+      y: d3.ScaleLinear<number, number>,
+      color: AttributeValue<{ x: X; y: Y }> = d3["schemeCategory10"][0]
     ) =>
     <S extends Selection>(g: S) =>
       g
@@ -49,5 +56,6 @@ export const helpers = ({
             .attr("width", x.bandwidth())
             .attr("y", (d) => y(d.y))
             .attr("height", (d) => height - y(d.y))
+            .attr("fill", color as any)
         ),
 });
