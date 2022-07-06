@@ -2,7 +2,7 @@ import { SystemCssProperties } from "@mui/system";
 import Box from "@mui/system/Box";
 import * as d3 from "d3";
 import React, { useRef, useEffect } from "react";
-import { useContentRect } from "../../../lib/use-content-rect";
+import { useContentRect } from "../lib/use-content-rect";
 import { helpers } from "./drawing-helpers";
 
 export type DrawingParams = {
