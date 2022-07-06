@@ -38,14 +38,8 @@ export const helpers = ({
 
   yAxis:
     <A extends d3.AxisScale<any>>(y: A) =>
-    <S extends Selection>(g: S) => {
-      if (prevWidth !== width || prevHeight !== height) {
-        // No transition animation if bounding box changed
-        return g.call(d3.axisLeft(y));
-      } else {
-        return g.transition().call(d3.axisLeft(y));
-      }
-    },
+    <S extends Selection>(g: S) =>
+      g.transition().call(d3.axisLeft(y)),
 
   bars:
     <X, Y extends NumberValue>(
@@ -63,34 +57,25 @@ export const helpers = ({
           .attr("height", (d) => height - y(d.y))
           .attr("fill", color as any);
 
-      if (prevWidth !== width || prevHeight !== height) {
-        // No transition animation if bounding box changed
-        return g
-          .selectAll("rect")
-          .data(data)
-          .join("rect")
-          .call(applyAttributes);
-      } else {
-        const rects = g.selectAll("rect");
+      const rects = g.selectAll("rect");
 
-        let prevData = rects.data() as { x: X; y: Y }[];
-        if (!Array.isArray(prevData)) prevData = [];
-        const prevX = new Set(prevData.map((d) => d.x));
+      let prevData = rects.data() as { x: X; y: Y }[];
+      if (!Array.isArray(prevData)) prevData = [];
+      const prevX = new Set(prevData.map((d) => d.x));
 
-        return rects
-          .data(data)
-          .join("rect")
-          .call((g) =>
-            // Transition only on previously existing categories
-            g
-              .filter((d) => prevX.has(d.x))
-              .transition()
-              .call(applyAttributes)
-          )
-          .call((g) =>
-            // Instantly apply affects to new categories
-            g.filter((d) => !prevX.has(d.x)).call(applyAttributes)
-          );
-      }
+      return rects
+        .data(data)
+        .join("rect")
+        .call((g) =>
+          // Transition only on previously existing categories
+          g
+            .filter((d) => prevX.has(d.x))
+            .transition()
+            .call(applyAttributes)
+        )
+        .call((g) =>
+          // Instantly apply affects to new categories
+          g.filter((d) => !prevX.has(d.x)).call(applyAttributes)
+        );
     },
 });

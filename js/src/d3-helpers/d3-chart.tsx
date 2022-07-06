@@ -47,8 +47,6 @@ export const D3Chart = ({
   const gRef =
     useRef<d3.Selection<SVGGElement, unknown, d3.BaseType, unknown>[]>();
 
-  const prevLayout = useRef<{ width?: number; height?: number }>({});
-
   useEffect(() => {
     // Ensure width and height are > 0
     if (!outerWidth || !outerHeight) return;
@@ -80,10 +78,8 @@ export const D3Chart = ({
         width,
         height,
         groups: gRef.current,
-        helpers: helpers({ width, height, ...prevLayout.current }),
+        helpers: helpers({ width, height }),
       });
-
-      prevLayout.current = { width, height };
     }
   }, [outerWidth, outerHeight, ...drawDeps]);
 
