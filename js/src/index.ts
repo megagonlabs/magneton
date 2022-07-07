@@ -25,6 +25,6 @@ import { SummaryView } from "./components/summary-view";
 import { Schema } from "./components/schema";
 export { Distribution };
 export { DualDistribution };
-export { LinkedDistribution as LinkedDistribution };
 export { SummaryView };
+export { LinkedDistribution };
 export { Schema };
