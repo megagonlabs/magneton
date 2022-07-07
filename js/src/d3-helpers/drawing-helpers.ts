@@ -17,17 +17,23 @@ type AttributeValue<D> =
 export const helpers = ({
   width,
   height,
+  didResize,
 }: {
   width: number;
   height: number;
+  didResize: boolean;
 }) => {
+  /** Creates a transition from selection iff not resizing */
+  const smartTransition = <S extends Selection>(g: S) =>
+    didResize ? g : (g.transition() as unknown as S);
+
   return {
     xAxis:
       <A extends d3.AxisScale<any>>(x: A) =>
       <S extends Selection>(g: S) =>
         g
           .call((g) =>
-            g.transition().attr("transform", "translate(0," + height + ")")
+            smartTransition(g).attr("transform", "translate(0," + height + ")")
           )
           .call(d3.axisBottom(x))
           .selectAll("text")
@@ -39,7 +45,7 @@ export const helpers = ({
     yAxis:
       <A extends d3.AxisScale<any>>(y: A) =>
       <S extends Selection>(g: S) =>
-        g.transition().call(d3.axisLeft(y)),
+        smartTransition(g).call(d3.axisLeft(y)),
 
     bars:
       <X, Y extends NumberValue>(
@@ -62,7 +68,7 @@ export const helpers = ({
           .data(data)
           .join(
             (enter) => enter.append("rect").call(attr),
-            (update) => update.transition().call(attr as any)
+            (update) => smartTransition(update).call(attr)
           );
       },
   };
