@@ -24,5 +24,5 @@ import { LinkedDistribution } from "./components/linked-distribution";
 import { Schema } from "./components/schema";
 export { Distribution };
 export { DualDistribution };
-export { LinkedDistribution };
+export { LinkedDistribution as LinkedDistribution };
 export { Schema };

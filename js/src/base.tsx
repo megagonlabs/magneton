@@ -1,6 +1,7 @@
 import React, { PropsWithChildren } from "react";
 import CSSBaseline from "@mui/material/CssBaseline";
 
+/** @deprecated use RootPane instead */
 export const Base = ({ children }: PropsWithChildren<{}>) => {
   return (
     <div style={{ position: "relative" }}>
