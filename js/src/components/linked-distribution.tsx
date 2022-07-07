@@ -1,13 +1,12 @@
 import React, { useMemo, useState } from "react";
 import DynamicBarChart from "./charts/dynamic-bar-chart";
 import BarChart from "./charts/bar-chart";
-import Stack from "@mui/material/Stack";
 import { ServiceWrapper } from "../lib/service-wrapper";
 import { CategoricalDatum } from "../types/data-types";
 import { useAsync } from "react-use";
 import { LoadingOverlay } from "./misc/loading-overlay";
 import { RootPane } from "./panes/root-pane";
-import Box from "@mui/system/Box";
+import { Pane } from "./panes/pane";
 
 export const LinkedDistribution = ({
   data,
@@ -30,17 +29,34 @@ export const LinkedDistribution = ({
 
   return (
     <RootPane>
-      <Box display="flex" height="100%">
+      <Pane>
         <DynamicBarChart
           data={data.node}
           onSelect={(d) => {
             setSelectedType(d.x);
           }}
         />
-        <LoadingOverlay sx={{ width: "100%" }} loading={loading} error={error}>
-          <BarChart data={value} />
-        </LoadingOverlay>
-      </Box>
+      </Pane>
+      <Pane direction="column">
+        <Pane>
+          <LoadingOverlay
+            sx={{ width: "100%", height: "100%" }}
+            loading={loading}
+            error={error}
+          >
+            <BarChart data={value} />
+          </LoadingOverlay>
+        </Pane>
+        <Pane>
+          <LoadingOverlay
+            sx={{ width: "100%", height: "100%" }}
+            loading={loading}
+            error={error}
+          >
+            <BarChart data={value} />
+          </LoadingOverlay>
+        </Pane>
+      </Pane>
     </RootPane>
   );
 };
