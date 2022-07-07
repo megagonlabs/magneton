@@ -28,7 +28,7 @@ export const Pane = ({
       className="pane"
       sx={{
         ".pane + &":
-          direction === "row"
+          parent?.direction === "row"
             ? {
                 borderLeft: 1,
               }
