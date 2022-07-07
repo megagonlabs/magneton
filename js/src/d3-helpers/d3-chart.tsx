@@ -47,6 +47,8 @@ export const D3Chart = ({
   const gRef =
     useRef<d3.Selection<SVGGElement, unknown, d3.BaseType, unknown>[]>();
 
+  const prevDims = useRef({ width: 0, height: 0 });
+
   useEffect(() => {
     // Ensure width and height are > 0
     if (!outerWidth || !outerHeight) return;
@@ -74,12 +76,19 @@ export const D3Chart = ({
       // Call draw on every update
       const width = outerWidth - margin.left - margin.right;
       const height = outerHeight - margin.bottom - margin.top;
+
+      const didResize =
+        Math.abs(width - prevDims.current.width) > 0.01 ||
+        Math.abs(height - prevDims.current.height) > 0.01;
+
       draw?.({
         width,
         height,
         groups: gRef.current,
-        helpers: helpers({ width, height }),
+        helpers: helpers({ width, height, didResize }),
       });
+
+      prevDims.current = { width, height };
     }
   }, [outerWidth, outerHeight, ...drawDeps]);
 
