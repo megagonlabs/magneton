@@ -19,12 +19,13 @@ export const RootPane = ({
   const thumbRef = useRef<HTMLDivElement>(null);
 
   const [isDragging, setIsDragging] = useState(false);
+  const [prevHeight, setPrevHeight] = useState(initialHeight);
   const [height, setHeight] = useState(initialHeight);
 
   useEffect(() => {
     if (!isDragging) return;
 
-    const listener = (e: MouseEvent) => {
+    const listener1 = (e: MouseEvent) => {
       if (!(e.buttons & 1)) return setIsDragging(false);
       if (!paneRef.current || !thumbRef.current) return;
       setHeight(
@@ -34,14 +35,27 @@ export const RootPane = ({
         )
       );
     };
-    window.addEventListener("mousemove", listener);
-    return () => window.removeEventListener("mousemove", listener);
+
+    const listener2 = (e: MouseEvent) => {
+      if (e.button === 0) return setIsDragging(false);
+    };
+
+    window.addEventListener("mousemove", listener1);
+    window.addEventListener("mouseup", listener2);
+    return () => {
+      window.removeEventListener("mousemove", listener1);
+      window.removeEventListener("mouseup", listener2);
+    };
   }, [isDragging]);
 
   const [contentRef, contentRect] = useContentRect();
 
   return (
-    <Box display="flex" flexDirection="column">
+    <Box
+      display="flex"
+      flexDirection="column"
+      minHeight={isDragging ? prevHeight : minHeight}
+    >
       <CssBaseline />
       <Box
         ref={useForkRef(paneRef, contentRef)}
@@ -64,7 +78,11 @@ export const RootPane = ({
         alignSelf="center"
         onMouseDown={(e) => {
           e.preventDefault();
-          setIsDragging(true);
+
+          if (e.button === 0) {
+            setIsDragging(true);
+            setPrevHeight(height);
+          }
         }}
         height="20px"
         width="100%"
