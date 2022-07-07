@@ -8,7 +8,7 @@ import { LoadingOverlay } from "./misc/loading-overlay";
 import { RootPane } from "./panes/root-pane";
 import { Pane } from "./panes/pane";
 
-export const LinkedDistribution = ({
+export const SummaryView = ({
   data,
   ipy_service,
 }: {
@@ -37,14 +37,25 @@ export const LinkedDistribution = ({
           }}
         />
       </Pane>
-      <Pane>
-        <LoadingOverlay
-          sx={{ width: "100%", height: "100%" }}
-          loading={loading}
-          error={error}
-        >
-          <BarChart data={value} />
-        </LoadingOverlay>
+      <Pane direction="column">
+        <Pane>
+          <LoadingOverlay
+            sx={{ width: "100%", height: "100%" }}
+            loading={loading}
+            error={error}
+          >
+            <BarChart data={value} />
+          </LoadingOverlay>
+        </Pane>
+        <Pane>
+          <LoadingOverlay
+            sx={{ width: "100%", height: "100%" }}
+            loading={loading}
+            error={error}
+          >
+            <BarChart data={value} />
+          </LoadingOverlay>
+        </Pane>
       </Pane>
     </RootPane>
   );
