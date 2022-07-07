@@ -1,5 +1,6 @@
+import { useForkRef } from "@mui/material";
 import Box from "@mui/system/Box";
-import React, { PropsWithChildren, useState } from "react";
+import React, { PropsWithChildren, useState, useEffect, useRef } from "react";
 import { useContentRect } from "../../lib/use-content-rect";
 import { usePaneContext, PaneContext } from "./pane-context";
 
@@ -13,13 +14,58 @@ export const Pane = ({
 }>) => {
   const parent = usePaneContext();
 
-  const [ref, contentRect] = useContentRect();
+  const paneRef = useRef<HTMLDivElement>(null);
+  const [contentRef, contentRect] = useContentRect();
 
   const [weight, setWeight] = useState(initialWeight);
 
+  const [dragState, setDragState] = useState({
+    isDragging: false,
+    initialTotalWeight: 0,
+    initialWeight: 0,
+  });
+
+  useEffect(() => {
+    if (!dragState.isDragging) return;
+
+    const listener1 = (e: MouseEvent) => {
+      if (!(e.buttons & 1))
+        return setDragState((state) => ({ ...state, isDragging: false }));
+
+      if (!parent?.contentRect || !paneRef.current) return;
+
+      const paneRect = paneRef.current.getBoundingClientRect();
+      const targetSize =
+        parent.direction === "row"
+          ? paneRect.right - e.clientX
+          : paneRect.bottom - e.clientY;
+
+      const { initialTotalWeight, initialWeight } = dragState;
+      const parentSize =
+        parent.contentRect[parent.direction === "row" ? "width" : "height"];
+      const ratio = Math.min(Math.max(targetSize / parentSize, 0.1), 0.9);
+
+      const newWeight =
+        (ratio / (1 - ratio)) * (initialTotalWeight - initialWeight);
+      setWeight(newWeight);
+    };
+
+    const listener2 = (e: MouseEvent) => {
+      if (e.button === 0)
+        return setDragState((state) => ({ ...state, isDragging: false }));
+    };
+
+    window.addEventListener("mousemove", listener1);
+    window.addEventListener("mouseup", listener2);
+    return () => {
+      window.removeEventListener("mousemove", listener1);
+      window.removeEventListener("mouseup", listener2);
+    };
+  }, [dragState.isDragging]);
+
   return (
     <Box
-      ref={ref}
+      ref={useForkRef(contentRef, paneRef)}
       display="flex"
       position="relative"
       flexDirection={direction}
@@ -51,7 +97,23 @@ export const Pane = ({
             ? { height: "100%", width: 10, left: -5, cursor: "col-resize" }
             : { width: "100%", height: 10, top: -5, cursor: "row-resize" }),
         }}
-      ></Box>
+        onMouseDown={(e) => {
+          e.preventDefault();
+
+          if (!parent?.contentRect || !paneRef.current) return;
+
+          const dim = parent.direction === "row" ? "width" : "height";
+          const totalWeight =
+            (weight * parent.contentRect[dim]) /
+            paneRef.current.getBoundingClientRect()[dim];
+
+          setDragState({
+            isDragging: true,
+            initialTotalWeight: totalWeight,
+            initialWeight: weight,
+          });
+        }}
+      />
 
       <Box
         position="absolute"
