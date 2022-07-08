@@ -9,8 +9,8 @@ export type NodeData = {
 
 export type LinkData = {
   label: string;
-  source: Node;
-  target: Node;
+  source: string;
+  target: string;
   weight: number;
 };
 
