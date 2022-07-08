@@ -5,11 +5,6 @@ export type CategoricalData = CategoricalDatum[];
 
 export type NodeData = {
   id: string;
-  index: number;
-  x: number;
-  y: number;
-  vy: number;
-  vx: number;
 };
 
 export type LinkData = {
@@ -17,8 +12,6 @@ export type LinkData = {
   source: Node;
   target: Node;
   weight: number;
-  sibling_index: number;
-  index: number;
 };
 
 export type GraphData = {
