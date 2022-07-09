@@ -178,19 +178,22 @@ class Graph:
             })
         return edge_list
 
-    def get_node_neighborhood_schema(self, node_label, 
-        node_property, node_property_value):
+    def get_node_neighborhood_schema(self, node):
+        node_label = node['node_label']
+        node_property = node['node_property']
+        node_property_value = node['node_property_value']
+
         query = ('MATCH (n:' + node_label + '{' + node_property + ':"' + 
                   node_property_value + '"})' +
                  'CALL apoc.path.spanningTree(n, {' +
                  'relationshipFilter: "< | >",' +
                  'minLevel: 1,' +
-                 'maxLevel: 1 })' +
-                 'YIELD path' + 
-                 'RETURN path')
-        results = self.neo4j_conn.run_query_kh(query)
-        relation_dict = {}
-        result_list = json.loads(results)
+                 'maxLevel: 1 }) ' +
+                 'YIELD path ' + 
+                 'RETURN path ')
+        result_list = self.neo4j_conn.run_query(query)
+
+        print(result_list[:5])
 
         edge_list = []
         for res in result_list:
@@ -205,26 +208,35 @@ class Graph:
             })
         return edge_list
 
-    def get_relation_neighborhood_schema(self, node_label, node_property, 
-        node_property_value, relationship_name, direction):
+    def get_relation_neighborhood_schema(self, node, relation):
+        node_label = node['node_label']
+        node_property = node['node_property']
+        node_property_value = node['node_property_value']
+        
+        relationship_name = relation['type']
+        direction = relation['direction']
+
         if direction == 'in':
             relation_param = "<" + relationship_name
         else:
             relation_param = relationship_name + ">"
 
         query = ('MATCH (n:' + node_label + '{' + node_property + ':"' + 
-                  node_property_value + '"})' +
-                 'CALL apoc.neighbors.athop(n, "' + relation_param + '", 1)' +
+                  node_property_value + '"}) ' +
+                 'CALL apoc.neighbors.athop(n, "' + relation_param + '", 1) ' +
                  'YIELD node ' +
                  'RETURN node')
-        results = self.neo4j_conn.run_query_kh(query)
-        relation_dict = {}
-        result_list = json.loads(results)
+        result_list = self.neo4j_conn.run_query(query)
 
         edge_list = []
         for res in result_list:
-            source = node_property_value
-            target = res['node'][node_property]
+            if direction == 'in':
+                source = res['node'][node_property] 
+                target = node_property_value
+            else:
+                target = res['node'][node_property]
+                source = node_property_value
+
             edge_list.append({
                 "source": source,
                 "target": target,
