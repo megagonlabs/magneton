@@ -177,3 +177,58 @@ class Graph:
                 "label": _type
             })
         return edge_list
+
+    def get_node_neighborhood_schema(self, node_label, 
+        node_property, node_property_value):
+        query = ('MATCH (n:' + node_label + '{' + node_property + ':"' + 
+                  node_property_value + '"})' +
+                 'CALL apoc.path.spanningTree(n, {' +
+                 'relationshipFilter: "< | >",' +
+                 'minLevel: 1,' +
+                 'maxLevel: 1 })' +
+                 'YIELD path' + 
+                 'RETURN path')
+        results = self.neo4j_conn.run_query_kh(query)
+        relation_dict = {}
+        result_list = json.loads(results)
+
+        edge_list = []
+        for res in result_list:
+            source = res['path']['start'][node_property]
+            target = res['path']['end'][node_property]
+            relationship_name = res['path']['segments'][0]['relationship']['type']
+            edge_list.append({
+                "source": source,
+                "target": target,
+                "weight": 1,
+                "label": relationship_name
+            })
+        return edge_list
+
+    def get_relation_neighborhood_schema(self, node_label, node_property, 
+        node_property_value, relationship_name, direction):
+        if direction == 'in':
+            relation_param = "<" + relationship_name
+        else:
+            relation_param = relationship_name + ">"
+
+        query = ('MATCH (n:' + node_label + '{' + node_property + ':"' + 
+                  node_property_value + '"})' +
+                 'CALL apoc.neighbors.athop(n, "' + relation_param + '", 1)' +
+                 'YIELD node ' +
+                 'RETURN node')
+        results = self.neo4j_conn.run_query_kh(query)
+        relation_dict = {}
+        result_list = json.loads(results)
+
+        edge_list = []
+        for res in result_list:
+            source = node_property_value
+            target = res['node'][node_property]
+            edge_list.append({
+                "source": source,
+                "target": target,
+                "weight": 1,
+                "label": relationship_name
+            })
+        return edge_list
