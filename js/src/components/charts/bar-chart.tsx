@@ -6,7 +6,7 @@ import { D3Chart } from "../../d3-helpers/d3-chart";
 const BarChart = ({ data }: { data: CategoricalDatum[] }) => {
   return (
     <D3Chart
-      margin={{ top: 20, right: 20, bottom: 100, left: 40 }}
+      margin={{ top: 20, right: 20, bottom: 50, left: 40 }}
       initialize={(g) => [g, g.append("g"), g.append("g")]}
       draw={({ width, height, groups: [g, gx, gy], helpers }) => {
         // set the ranges

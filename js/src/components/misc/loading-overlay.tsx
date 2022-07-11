@@ -17,7 +17,7 @@ export const LoadingOverlay = ({
   style?: CSSProperties;
 }>) => {
   return (
-    <Box position="relative" sx={sx} style={style}>
+    <Box position="relative" width="100%" height="100%" sx={sx} style={style}>
       {children}
       <Box
         display="flex"

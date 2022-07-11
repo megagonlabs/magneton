@@ -2,17 +2,19 @@ import React, { useMemo, useState } from "react";
 import DynamicBarChart from "./charts/dynamic-bar-chart";
 import BarChart from "./charts/bar-chart";
 import { ServiceWrapper } from "../lib/service-wrapper";
-import { CategoricalDatum } from "../types/data-types";
+import { CategoricalDatum, GraphData } from "../types/data-types";
 import { useAsync } from "react-use";
 import { LoadingOverlay } from "./misc/loading-overlay";
 import { RootPane } from "./panes/root-pane";
 import { Pane } from "./panes/pane";
+import { SchemaGraph } from "./charts/schema-graph";
+import { LinkedDistribution } from "./linked-distribution";
 
 export const SummaryView = ({
   data,
   ipy_service,
 }: {
-  data: { node: CategoricalDatum[] };
+  data: GraphData;
   ipy_service: string;
 }) => {
   const service = useMemo(() => new ServiceWrapper(ipy_service), [ipy_service]);
@@ -30,32 +32,21 @@ export const SummaryView = ({
   return (
     <RootPane>
       <Pane>
-        <DynamicBarChart
-          data={data.node}
-          onSelect={(d) => {
-            setSelectedType(d.x);
+        <SchemaGraph
+          data={data}
+          onTap={(e) => {
+            const type = e.target.data("id");
+            setSelectedType(type);
           }}
         />
       </Pane>
       <Pane direction="column">
         <Pane>
-          <LoadingOverlay
-            sx={{ width: "100%", height: "100%" }}
-            loading={loading}
-            error={error}
-          >
+          <LoadingOverlay loading={loading} error={error}>
             <BarChart data={value} />
           </LoadingOverlay>
         </Pane>
-        <Pane>
-          <LoadingOverlay
-            sx={{ width: "100%", height: "100%" }}
-            loading={loading}
-            error={error}
-          >
-            <BarChart data={value} />
-          </LoadingOverlay>
-        </Pane>
+        <Pane>WIP</Pane>
       </Pane>
     </RootPane>
   );
