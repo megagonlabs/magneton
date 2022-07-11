@@ -183,29 +183,35 @@ class Graph:
         node_property = node['node_property']
         node_property_value = node['node_property_value']
 
-        query = ('MATCH (n:' + node_label + '{' + node_property + ':"' + 
-                  node_property_value + '"})' +
+        query = ('MATCH (n:' + node_label + ' {' + node_property + ':"' + 
+                  node_property_value + '"}) ' +
                  'CALL apoc.path.spanningTree(n, {' +
                  'relationshipFilter: "< | >",' +
                  'minLevel: 1,' +
                  'maxLevel: 1 }) ' +
                  'YIELD path ' + 
-                 'RETURN path ')
+                 'WITH apoc.path.elements(path) AS elements ' +
+                 'UNWIND range(0, size(elements)-2) AS index ' +
+                 'WITH elements, index ' +
+                 'WHERE index %2 = 0 ' +
+                 'RETURN elements[index] AS source, ' +
+                 'elements[index+1] AS relation, ' + 
+                 'elements[index+2] AS target')
         result_list = self.neo4j_conn.run_query(query)
-
-        print(result_list[:5])
 
         edge_list = []
         for res in result_list:
-            source = res['path']['start'][node_property]
-            target = res['path']['end'][node_property]
-            relationship_name = res['path']['segments'][0]['relationship']['type']
-            edge_list.append({
-                "source": source,
-                "target": target,
-                "weight": 1,
-                "label": relationship_name
-            })
+            # TODO: __DATASET__ node property except as it's "type"
+            try:
+                edge_list.append({
+                    "source": res['source'][node_property],
+                    "target": res['target'][node_property],
+                    "weight": 1,
+                    "label": res['relation']['type']
+                })
+            except:
+              print(res)
+            
         return edge_list
 
     def get_relation_neighborhood_schema(self, node, relation):
@@ -221,7 +227,7 @@ class Graph:
         else:
             relation_param = relationship_name + ">"
 
-        query = ('MATCH (n:' + node_label + '{' + node_property + ':"' + 
+        query = ('MATCH (n:' + node_label + ' {' + node_property + ':"' + 
                   node_property_value + '"}) ' +
                  'CALL apoc.neighbors.athop(n, "' + relation_param + '", 1) ' +
                  'YIELD node ' +
