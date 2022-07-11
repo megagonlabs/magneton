@@ -115,16 +115,18 @@ export const Pane = ({
         }}
       />
 
-      <Box
-        position="absolute"
-        display="flex"
-        flexDirection={direction}
-        sx={{ width: contentRect?.width, height: contentRect?.height }}
-      >
-        <PaneContext.Provider value={{ contentRect, direction }}>
-          {children}
-        </PaneContext.Provider>
-      </Box>
+      {contentRect && (
+        <Box
+          position="absolute"
+          display="flex"
+          flexDirection={direction}
+          sx={{ width: contentRect.width, height: contentRect.height }}
+        >
+          <PaneContext.Provider value={{ contentRect, direction }}>
+            {children}
+          </PaneContext.Provider>
+        </Box>
+      )}
     </Box>
   );
 };
