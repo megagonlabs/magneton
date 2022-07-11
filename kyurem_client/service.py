@@ -92,3 +92,26 @@ class Service:
         else:
             raise Exception(response.text)
         return parsed_result
+
+    def get_node_neighborhood(self, node):
+        path = self.get_service_endpoint('get_node_neighborhood')
+        payload = self.get_base_payload()
+        payload['node'] = node
+        response = get_request(path, json=payload)
+        if response.status_code == 200:
+            parsed_result = response.json()
+        else:
+            raise Exception(response.text)
+        return parsed_result
+
+    def get_relation_neighborhood(self, node, relation):
+        path = self.get_service_endpoint('get_relation_neighborhood')
+        payload = self.get_base_payload()
+        payload['node'] = node
+        payload['relation'] = relation
+        response = get_request(path, json=payload)
+        if response.status_code == 200:
+            parsed_result = response.json()
+        else:
+            raise Exception(response.text)
+        return parsed_result
