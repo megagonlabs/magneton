@@ -1,7 +1,7 @@
-from .. import _WEB_MODULE
 import idom
 from varname import argname
 import pandas as pd
+from ..idom_loader import load_component
 
 
 class SummaryView:
@@ -16,7 +16,7 @@ class SummaryView:
             else:
                 self.__service = argname("service")
 
-        self.__widget = idom.web.export(_WEB_MODULE, "SummaryView")
+        self.__widget = load_component("SummaryView")
 
     def set_data(self, edge_list):
         df = pd.DataFrame(edge_list)

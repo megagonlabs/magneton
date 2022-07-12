@@ -1,6 +1,6 @@
-from .. import _WEB_MODULE
 import idom
 from varname import argname
+from ..idom_loader import load_component
 
 
 class LinkedDistribution:
@@ -13,7 +13,7 @@ class LinkedDistribution:
             else:
                 self.__service = argname("service")
 
-        self.__widget = idom.web.export(_WEB_MODULE, "LinkedDistribution")
+        self.__widget = load_component("LinkedDistribution")
 
     @idom.component
     def show(self):
