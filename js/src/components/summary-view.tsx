@@ -46,7 +46,7 @@ export const SummaryView = ({
             <BarChart data={value} />
           </LoadingOverlay>
         </Pane>
-        <Pane>WIP</Pane>
+        <Pane>WIP 2</Pane>
       </Pane>
     </RootPane>
   );

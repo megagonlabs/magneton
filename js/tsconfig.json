@@ -9,5 +9,10 @@
     "strict": true,
     "skipLibCheck": true
   },
-  "include": ["./src/**/*"]
+  "include": ["./src/**/*"],
+  "ts-node": {
+    "compilerOptions": {
+      "module": "CommonJS"
+    }
+  }
 }
