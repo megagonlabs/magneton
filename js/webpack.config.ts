@@ -83,6 +83,12 @@ const dev: Configuration = extend(base, {
     filename: "bundle.js",
   },
 
+  // Optimize bundle size by getting React from a CDN
+  externals: {
+    react: "https://esm.sh/react@18?dev",
+    "react-dom": "https://esm.sh/react-dom@18?dev",
+  },
+
   // Watch files for changes
   watch: true,
 });
@@ -96,6 +102,12 @@ const prod: Configuration = {
 
   output: {
     filename: "bundle.min.js",
+  },
+
+  // Optimize bundle size by getting React from a CDN
+  externals: {
+    react: "https://esm.sh/react@18",
+    "react-dom": "https://esm.sh/react-dom@18",
   },
 };
 
