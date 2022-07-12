@@ -1,8 +1,8 @@
-import React, { useMemo } from "react";
-import { GraphData } from "../types/data-types";
-import { RootPane } from "./panes/root-pane";
+import React, { useEffect, useMemo, useRef } from "react";
+import { GraphData } from "../../types/data-types";
 import CytoscapeComponent from "react-cytoscapejs";
 import * as d3 from "d3";
+import cytoscape from "cytoscape";
 
 const multiplyLightness = (color: string, factor: number) => {
   const c = d3.lab(color);
@@ -10,7 +10,13 @@ const multiplyLightness = (color: string, factor: number) => {
   return c.formatRgb();
 };
 
-export const Schema = ({ data }: { data: GraphData }) => {
+export const SchemaGraph = ({
+  data,
+  onTap,
+}: {
+  data: GraphData;
+  onTap?: (ev: cytoscape.InputEventObject) => void;
+}) => {
   const elements = useMemo(() => {
     // Collapse multi-edges into undirected edges
     const edges: Record<
@@ -56,28 +62,39 @@ export const Schema = ({ data }: { data: GraphData }) => {
     return elements;
   }, [data]);
 
+  const cy = useRef<cytoscape.Core | null>(null);
+  useEffect(() => {
+    if (onTap) {
+      cy.current?.on("tap", onTap);
+      return () => {
+        cy.current?.off("tap", onTap);
+      };
+    }
+  }, [cy.current, onTap]);
+
   return (
-    <RootPane>
-      <CytoscapeComponent
-        elements={elements}
-        style={{ width: "100%", height: "100%" }}
-        layout={{ name: "circle" }}
-        stylesheet={[
-          {
-            selector: "node",
-            style: {
-              label: "data(label)",
-            },
+    <CytoscapeComponent
+      elements={elements}
+      style={{ width: "100%", height: "100%" }}
+      layout={{ name: "circle" }}
+      stylesheet={[
+        {
+          selector: "node",
+          style: {
+            label: "data(label)",
           },
-          {
-            selector: "edge",
-            style: {
-              width: "data(width)",
-              "line-color": "data(color)",
-            },
+        },
+        {
+          selector: "edge",
+          style: {
+            width: "data(width)",
+            "line-color": "data(color)",
           },
-        ]}
-      />
-    </RootPane>
+        },
+      ]}
+      cy={(instance) => {
+        cy.current = instance;
+      }}
+    />
   );
 };
