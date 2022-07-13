@@ -1,13 +1,13 @@
-from .. import _WEB_MODULE
 import idom
 import pandas as pd
+from ..idom_loader import load_component
 
 class Schema:
 
     def __init__(self, edge_list):
         self.__data = {}
         self.set_data(edge_list)
-        self.__widget = idom.web.export(_WEB_MODULE, "Schema")
+        self.__widget = load_component("Schema")
 
     def set_data(self, edge_list, node_radius=15, link_distance=5, collision_scale=10, link_width_scale=1):
         df = pd.DataFrame(edge_list)
