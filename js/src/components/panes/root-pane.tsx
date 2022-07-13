@@ -4,6 +4,7 @@ import React, { PropsWithChildren, useEffect, useRef, useState } from "react";
 import DehazeIcon from "@mui/icons-material/Dehaze";
 import { PaneContext } from "./pane-context";
 import { useContentRect } from "../../lib/use-content-rect";
+import { useDragHelper } from "../../lib/use-drag-helper";
 
 export const RootPane = ({
   initialHeight = 400,
@@ -18,35 +19,26 @@ export const RootPane = ({
   const paneRef = useRef<HTMLDivElement>(null);
   const thumbRef = useRef<HTMLDivElement>(null);
 
-  const [isDragging, setIsDragging] = useState(false);
   const [prevHeight, setPrevHeight] = useState(initialHeight);
   const [height, setHeight] = useState(initialHeight);
 
+  const dragHelper = useDragHelper();
   useEffect(() => {
-    if (!isDragging) return;
+    dragHelper.events.on("dragstart", () => {
+      setPrevHeight(height);
+    });
 
-    const listener1 = (e: MouseEvent) => {
-      if (!(e.buttons & 1)) return setIsDragging(false);
-      if (!paneRef.current || !thumbRef.current) return;
+    dragHelper.events.on("drag", (e) => {
+      if (!paneRef.current) return;
+
       setHeight(
         Math.max(
           e.clientY - paneRef.current.getBoundingClientRect().top,
           minHeight
         )
       );
-    };
-
-    const listener2 = (e: MouseEvent) => {
-      if (e.button === 0) return setIsDragging(false);
-    };
-
-    window.addEventListener("mousemove", listener1);
-    window.addEventListener("mouseup", listener2);
-    return () => {
-      window.removeEventListener("mousemove", listener1);
-      window.removeEventListener("mouseup", listener2);
-    };
-  }, [isDragging]);
+    });
+  }, []);
 
   const [contentRef, contentRect] = useContentRect();
 
@@ -54,7 +46,7 @@ export const RootPane = ({
     <Box
       display="flex"
       flexDirection="column"
-      minHeight={isDragging ? prevHeight : minHeight}
+      minHeight={dragHelper.state.isDragging ? prevHeight : minHeight}
     >
       <CssBaseline />
       <Box
@@ -75,15 +67,8 @@ export const RootPane = ({
       </Box>
       <Box
         ref={thumbRef}
+        {...dragHelper.props}
         alignSelf="center"
-        onMouseDown={(e) => {
-          e.preventDefault();
-
-          if (e.button === 0) {
-            setIsDragging(true);
-            setPrevHeight(height);
-          }
-        }}
         height="20px"
         width="100%"
         display="flex"

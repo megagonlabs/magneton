@@ -1,4 +1,4 @@
-import { Configuration } from "webpack";
+import { Configuration, ProvidePlugin } from "webpack";
 import "webpack-dev-server";
 import * as path from "path";
 

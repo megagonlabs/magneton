@@ -16,4 +16,13 @@ export class ServiceWrapper {
     );
     return JSON.parse(text) as CategoricalDatum[];
   }
+
+  async get_children_node_distributions(nodeType?: string) {
+    const text = await ipy_function(
+      `${this._service}.get_children_node_distributions(${
+        nodeType ? `node_type='${nodeType}'` : ""
+      })`
+    );
+    return JSON.parse(text) as CategoricalDatum[];
+  }
 }

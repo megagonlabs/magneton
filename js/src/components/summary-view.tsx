@@ -9,6 +9,7 @@ import { RootPane } from "./panes/root-pane";
 import { Pane } from "./panes/pane";
 import { SchemaGraph } from "./charts/schema-graph";
 import { LinkedDistribution } from "./linked-distribution";
+import InteractiveBarChart from "./charts/interactive-bar-chart";
 
 export const SummaryView = ({
   data,
@@ -25,12 +26,12 @@ export const SummaryView = ({
     error,
     value = [],
   } = useAsync(
-    () => service.get_node_granularity_distribution(selectedType),
+    () => service.get_children_node_distributions(selectedType),
     [selectedType]
   );
 
   return (
-    <RootPane>
+    <RootPane initialHeight={600}>
       <Pane>
         <SchemaGraph
           data={data}
@@ -43,10 +44,15 @@ export const SummaryView = ({
       <Pane direction="column">
         <Pane>
           <LoadingOverlay loading={loading} error={error}>
-            <BarChart data={value} />
+            <InteractiveBarChart data={value} />
           </LoadingOverlay>
         </Pane>
-        <Pane>WIP 2</Pane>
+        <Pane>
+          <LoadingOverlay loading={loading} error={error}>
+            <BarChart data={value} />
+          </LoadingOverlay>
+          Hello World
+        </Pane>
       </Pane>
     </RootPane>
   );

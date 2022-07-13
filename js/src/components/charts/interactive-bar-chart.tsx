@@ -1,9 +1,19 @@
 import * as d3 from "d3";
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { CategoricalDatum } from "../../types/data-types";
 import { D3Chart } from "../../d3-helpers/d3-chart";
+import { useDragHelper } from "../../lib/use-drag-helper";
 
-const BarChart = ({ data }: { data: CategoricalDatum[] }) => {
+const InteractiveBarChart = ({ data }: { data: CategoricalDatum[] }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const dragHelper = useDragHelper();
+
+  useEffect(() => {
+    // dragHelper.events.on("dragstart", (e) => console.log("dragstart", e));
+    // dragHelper.events.on("drag", (e) => console.log("drag", e));
+    // dragHelper.events.on("dragend", (e) => console.log("dragend", e));
+  }, []);
+
   return (
     <D3Chart
       margin={{ top: 20, right: 20, bottom: 100, left: 40 }}
@@ -27,8 +37,11 @@ const BarChart = ({ data }: { data: CategoricalDatum[] }) => {
         gy.call(helpers.yAxis(y));
       }}
       drawDeps={[data]}
+
+      ref={ref}
+      {...dragHelper.props}
     />
   );
 };
 
-export default BarChart;
+export default InteractiveBarChart;

@@ -39,18 +39,19 @@ export const Schema = ({ data }: { data: GraphData }) => {
       ...data.graph_json_nodes.map(({ id }) => ({
         data: { id, label: id },
       })),
+      ...data.graph_json_links.map(({source, target, label}) => ({ data: { source, target, label } }))
 
-      ...Object.values(edges).map(({ nodeA, nodeB, count }) => ({
-        data: {
-          source: nodeA,
-          target: nodeB,
-          width: Math.max((15 * count) / maxCount, 1),
-          color: multiplyLightness(
-            d3.interpolateGnBu(count / maxCount),
-            count / maxCount
-          ),
-        },
-      })),
+      // ...Object.values(edges).map(({ nodeA, nodeB, count }) => ({
+      //   data: {
+      //     source: nodeA,
+      //     target: nodeB,
+      //     width: Math.max((15 * count) / maxCount, 1),
+      //     color: multiplyLightness(
+      //       d3.interpolateGnBu(count / maxCount),
+      //       count / maxCount
+      //     ),
+      //   },
+      // })),
     ];
 
     return elements;
@@ -72,8 +73,9 @@ export const Schema = ({ data }: { data: GraphData }) => {
           {
             selector: "edge",
             style: {
-              width: "data(width)",
-              "line-color": "data(color)",
+              // width: "data(width)",
+              // "line-color": "data(color)",
+              "target-arrow-shape": "triangle"
             },
           },
         ]}

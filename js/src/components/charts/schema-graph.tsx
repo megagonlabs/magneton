@@ -46,6 +46,8 @@ export const SchemaGraph = ({
         data: { id, label: id },
       })),
 
+      // ...data.graph_json_links.map(({source, target, label}) => ({ data: { source, target, label } }))
+
       ...Object.values(edges).map(({ nodeA, nodeB, count }) => ({
         data: {
           source: nodeA,
@@ -89,6 +91,7 @@ export const SchemaGraph = ({
           style: {
             width: "data(width)",
             "line-color": "data(color)",
+            // "target-arrow-shape": "triangle"
           },
         },
       ]}
