@@ -32,6 +32,17 @@ export const Pane = ({
     let initialSize: number;
     let initialWeight: number;
 
+    const computeWeight = (e: { clientX: number; clientY: number }) => {
+      const targetSize =
+        parentDirection === "row"
+          ? paneRect.right - e.clientX
+          : paneRect.bottom - e.clientY;
+      const ratio = Math.min(Math.max(targetSize / parentSize, 0.1), 0.9);
+      const totalWeight = (initialWeight * parentSize) / initialSize;
+
+      return (ratio / (1 - ratio)) * (totalWeight - initialWeight);
+    };
+
     dragHelper.events.on("dragstart", () => {
       const { parent, weight } = stateRef.current;
       if (!parent?.contentRect || !paneRef.current) return;
@@ -45,13 +56,12 @@ export const Pane = ({
     });
 
     dragHelper.events.on("drag", (e) => {
-      const targetSize =
-        parentDirection === "row"
-          ? paneRect.right - e.clientX
-          : paneRect.bottom - e.clientY;
-      const ratio = Math.min(Math.max(targetSize / parentSize, 0.1), 0.9);
-      const totalWeight = (initialWeight * parentSize) / initialSize;
-      setWeight((ratio / (1 - ratio)) * (totalWeight - initialWeight));
+      if (!paneRef.current) return;
+      paneRef.current.style.flexGrow = `${computeWeight(e)}`;
+    });
+
+    dragHelper.events.on("dragend", (e) => {
+      setWeight(computeWeight(e));
     });
   }, []);
 
@@ -97,7 +107,7 @@ export const Pane = ({
           position="absolute"
           display="flex"
           flexDirection={direction}
-          sx={{ width: contentRect.width, height: contentRect.height }}
+          style={{ width: contentRect.width, height: contentRect.height }}
         >
           <PaneContext.Provider value={{ contentRect, direction }}>
             {children}
