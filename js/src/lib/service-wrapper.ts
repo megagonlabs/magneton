@@ -25,4 +25,13 @@ export class ServiceWrapper {
     );
     return JSON.parse(text) as CategoricalDatum[];
   }
+
+  async get_node_degree_distributions(nodeType?: string) {
+    const text = await ipy_function(
+      `${this._service}.get_node_degree_distributions(${
+        nodeType ? `'${nodeType}'` : ""
+      })`
+    );
+    return JSON.parse(text) as { x: string; y: number; type: "in" | "out" }[];
+  }
 }

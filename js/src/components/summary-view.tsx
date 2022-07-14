@@ -9,7 +9,8 @@ import { RootPane } from "./panes/root-pane";
 import { Pane } from "./panes/pane";
 import { SchemaGraph } from "./charts/schema-graph";
 import { LinkedDistribution } from "./linked-distribution";
-import InteractiveBarChart from "./charts/interactive-bar-chart";
+import AsyncBarChart from "./charts/async-bar-chart";
+import * as d3 from "d3";
 
 export const SummaryView = ({
   data,
@@ -21,12 +22,12 @@ export const SummaryView = ({
   const service = useMemo(() => new ServiceWrapper(ipy_service), [ipy_service]);
 
   const [selectedType, setSelectedType] = useState<string | undefined>();
-  const {
-    loading,
-    error,
-    value = [],
-  } = useAsync(
+  const childrenNodeDist = useAsync(
     () => service.get_children_node_distributions(selectedType),
+    [selectedType]
+  );
+  const degreeDist = useAsync(
+    () => service.get_node_degree_distributions(selectedType),
     [selectedType]
   );
 
@@ -43,15 +44,13 @@ export const SummaryView = ({
       </Pane>
       <Pane direction="column">
         <Pane>
-          <LoadingOverlay loading={loading} error={error}>
-            <InteractiveBarChart data={value} />
-          </LoadingOverlay>
+          <AsyncBarChart state={childrenNodeDist} />
         </Pane>
         <Pane>
-          Hello World
-        </Pane>
-        <Pane>
-          Hello Again
+          <AsyncBarChart
+            state={degreeDist}
+            color={(d) => d3["schemeCategory10"][d.type === "in" ? 0 : 1]}
+          />
         </Pane>
       </Pane>
     </RootPane>

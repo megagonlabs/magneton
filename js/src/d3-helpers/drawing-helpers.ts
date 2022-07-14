@@ -3,7 +3,7 @@ import { NumberValue } from "d3";
 
 type Selection<D = any> = d3.Selection<any, D, any, any>;
 
-type AttributeValue<D> =
+export type AttributeValue<D> =
   | string
   | number
   | boolean
@@ -48,14 +48,14 @@ export const helpers = ({
         smartTransition(g).call(d3.axisLeft(y)),
 
     bars:
-      <X, Y extends NumberValue>(
-        data: { x: X; y: Y }[],
+      <X, D extends { x: X; y: any }>(
+        data: D[],
         x: d3.ScaleBand<X>,
         y: d3.ScaleLinear<number, number>,
-        color: AttributeValue<{ x: X; y: Y }> = d3["schemeCategory10"][0]
+        color: AttributeValue<D> = d3["schemeCategory10"][0]
       ) =>
       <S extends Selection>(g: S) => {
-        const attr = (g: Selection<{ x: X; y: Y }>) =>
+        const attr = (g: Selection<D>) =>
           g
             .attr("x", (d) => x(d.x)!)
             .attr("width", x.bandwidth())
