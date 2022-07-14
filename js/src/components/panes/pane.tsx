@@ -1,7 +1,5 @@
 import Box from "@mui/system/Box";
-import EventEmitter from "events";
-import React, { PropsWithChildren, useState, useEffect, useRef } from "react";
-import TypedEventEmitter from "typed-emitter";
+import React, { PropsWithChildren, useEffect, useRef } from "react";
 import { useDragHelper } from "../../lib/use-drag-helper";
 import { useParentPane, PaneContext, usePaneContext } from "./pane-context";
 
