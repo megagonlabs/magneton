@@ -110,6 +110,7 @@ export const D3Chart = forwardRef(
         sx={{
           width: "100%",
           height: "100%",
+          position: "absolute",
           ...sx,
         }}
         ref={useForkRef(containerRef, ref)}

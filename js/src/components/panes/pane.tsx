@@ -1,9 +1,7 @@
-import { useForkRef } from "@mui/material";
 import Box from "@mui/system/Box";
 import React, { PropsWithChildren, useState, useEffect, useRef } from "react";
-import { useContentRect } from "../../lib/use-content-rect";
 import { useDragHelper } from "../../lib/use-drag-helper";
-import { usePaneContext, PaneContext } from "./pane-context";
+import { useParentPane, PaneContext } from "./pane-context";
 
 export const Pane = ({
   children,
@@ -13,10 +11,9 @@ export const Pane = ({
   initialWeight?: number;
   direction?: "row" | "column";
 }>) => {
-  const parent = usePaneContext();
+  const parent = useParentPane();
 
   const paneRef = useRef<HTMLDivElement>(null);
-  const [contentRef, contentRect] = useContentRect();
 
   const [weight, setWeight] = useState(initialWeight);
 
@@ -24,17 +21,17 @@ export const Pane = ({
 
   const stateRef = useRef({ parent, weight });
   stateRef.current = { parent, weight };
-
   useEffect(() => {
-    let parentDirection: "row" | "column";
     let parentSize: number;
     let paneRect: DOMRectReadOnly;
     let initialSize: number;
     let initialWeight: number;
 
     const computeWeight = (e: { clientX: number; clientY: number }) => {
+      const { parent } = stateRef.current;
+
       const targetSize =
-        parentDirection === "row"
+        parent.direction === "row"
           ? paneRect.right - e.clientX
           : paneRect.bottom - e.clientY;
       const ratio = Math.min(Math.max(targetSize / parentSize, 0.1), 0.9);
@@ -45,11 +42,11 @@ export const Pane = ({
 
     dragHelper.events.on("dragstart", () => {
       const { parent, weight } = stateRef.current;
-      if (!parent?.contentRect || !paneRef.current) return;
+
+      if (!parent.node || !paneRef.current) return;
       const dim = parent.direction === "row" ? "width" : "height";
 
-      parentDirection = parent.direction;
-      parentSize = parent.contentRect[dim];
+      parentSize = parent.node.getBoundingClientRect()[dim];
       paneRect = paneRef.current.getBoundingClientRect();
       initialSize = paneRect[dim];
       initialWeight = weight;
@@ -67,20 +64,20 @@ export const Pane = ({
 
   return (
     <Box
-      ref={useForkRef(contentRef, paneRef)}
-      display="flex"
+      ref={paneRef}
       position="relative"
-      flexDirection={direction}
       flexBasis={0}
-      flexGrow={weight}
       className="pane"
       sx={{
         ".pane + &":
-          parent?.direction === "row"
+          parent.direction === "row"
             ? {
                 borderLeft: 1,
               }
             : { borderTop: 1 },
+      }}
+      style={{
+        flexGrow: weight,
       }}
     >
       <Box
@@ -95,25 +92,23 @@ export const Pane = ({
           opacity: 0,
           "&:hover": { opacity: 1 },
 
-          ...(parent?.direction === "row"
+          ...(parent.direction === "row"
             ? { height: "100%", width: 10, left: -5, cursor: "col-resize" }
             : { width: "100%", height: 10, top: -5, cursor: "row-resize" }),
         }}
         {...dragHelper.props}
       />
-
-      {contentRect && (
-        <Box
-          position="absolute"
-          display="flex"
-          flexDirection={direction}
-          style={{ width: contentRect.width, height: contentRect.height }}
-        >
-          <PaneContext.Provider value={{ contentRect, direction }}>
-            {children}
-          </PaneContext.Provider>
-        </Box>
-      )}
+      <Box
+        position="absolute"
+        width="100%"
+        height="100%"
+        display="flex"
+        flexDirection={direction}
+      >
+        <PaneContext.Provider value={{ node: paneRef.current, direction }}>
+          {children}
+        </PaneContext.Provider>
+      </Box>
     </Box>
   );
 };

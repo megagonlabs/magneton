@@ -1,7 +1,7 @@
 import { createContext, useContext } from "react";
 
 export const PaneContext = createContext<{
-  contentRect?: DOMRectReadOnly;
+  node: HTMLDivElement | null;
   direction: "row" | "column";
-} | null>(null);
-export const usePaneContext = () => useContext(PaneContext);
+}>({ node: null, direction: "row" });
+export const useParentPane = () => useContext(PaneContext);

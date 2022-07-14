@@ -1,10 +1,9 @@
-import { CssBaseline, useForkRef } from "@mui/material";
+import { CssBaseline } from "@mui/material";
 import { Box } from "@mui/system";
 import React, { PropsWithChildren, useEffect, useRef, useState } from "react";
 import DehazeIcon from "@mui/icons-material/Dehaze";
 import { PaneContext } from "./pane-context";
-import { useContentRect } from "../../lib/use-content-rect";
-import { useDragHelper } from "../../lib/use-drag-helper";
+import { DragEvent, useDragHelper } from "../../lib/use-drag-helper";
 
 export const RootPane = ({
   initialHeight = 400,
@@ -23,36 +22,41 @@ export const RootPane = ({
   const [height, setHeight] = useState(initialHeight);
 
   const dragHelper = useDragHelper();
+
+  const stateRef = useRef({ height });
+  stateRef.current = { height };
   useEffect(() => {
+    const computeHeight = (e: DragEvent) => {
+      const top = paneRef.current!.getBoundingClientRect().top;
+      return Math.max(e.clientY - top, minHeight);
+    };
+
     dragHelper.events.on("dragstart", () => {
-      setPrevHeight(height);
+      setPrevHeight(stateRef.current.height);
     });
 
     dragHelper.events.on("drag", (e) => {
-      if (!paneRef.current) return;
+      paneRef.current!.style.height = `${computeHeight(e)}px`;
+    });
 
-      setHeight(
-        Math.max(
-          e.clientY - paneRef.current.getBoundingClientRect().top,
-          minHeight
-        )
-      );
+    dragHelper.events.on("dragend", (e) => {
+      setHeight(computeHeight(e));
     });
   }, []);
-
-  const [contentRef, contentRect] = useContentRect();
 
   return (
     <Box
       display="flex"
       flexDirection="column"
-      minHeight={dragHelper.state.isDragging ? prevHeight : minHeight}
+      style={{
+        minHeight: dragHelper.state.isDragging ? prevHeight : minHeight,
+      }}
     >
       <CssBaseline />
       <Box
-        ref={useForkRef(paneRef, contentRef)}
+        ref={paneRef}
+        position="relative"
         width="100%"
-        height={height}
         border={1}
         borderColor="rgba(0,0,0,0.5)"
         borderRadius={1.5}
@@ -60,8 +64,11 @@ export const RootPane = ({
         overflow="hidden"
         display="flex"
         flexDirection={direction}
+        style={{
+          height,
+        }}
       >
-        <PaneContext.Provider value={{ contentRect, direction }}>
+        <PaneContext.Provider value={{ node: paneRef.current, direction }}>
           {children}
         </PaneContext.Provider>
       </Box>
