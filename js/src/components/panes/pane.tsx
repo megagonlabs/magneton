@@ -104,6 +104,8 @@ export const Pane = ({
         height="100%"
         display="flex"
         flexDirection={direction}
+
+        overflow="hidden"
       >
         <PaneContext.Provider value={{ node: paneRef.current, direction }}>
           {children}
