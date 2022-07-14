@@ -46,13 +46,12 @@ export const SummaryView = ({
           <LoadingOverlay loading={loading} error={error}>
             <InteractiveBarChart data={value} />
           </LoadingOverlay>
-          {/* Hello World */}
         </Pane>
         <Pane>
-          {/* <LoadingOverlay loading={loading} error={error}> */}
-            {/* <BarChart data={value} /> */}
-          {/* </LoadingOverlay> */}
           Hello World
+        </Pane>
+        <Pane>
+          Hello Again
         </Pane>
       </Pane>
     </RootPane>

@@ -1,8 +1,8 @@
 import { CssBaseline } from "@mui/material";
 import { Box } from "@mui/system";
-import React, { PropsWithChildren, useEffect, useRef, useState } from "react";
+import React, { PropsWithChildren, useCallback, useRef, useState } from "react";
 import DehazeIcon from "@mui/icons-material/Dehaze";
-import { PaneContext } from "./pane-context";
+import { PaneContext, usePaneContext } from "./pane-context";
 import { DragEvent, useDragHelper } from "../../lib/use-drag-helper";
 
 export const RootPane = ({
@@ -21,29 +21,28 @@ export const RootPane = ({
   const [prevHeight, setPrevHeight] = useState(initialHeight);
   const [height, setHeight] = useState(initialHeight);
 
-  const dragHelper = useDragHelper();
-
-  const stateRef = useRef({ height });
-  stateRef.current = { height };
-  useEffect(() => {
-    const computeHeight = (e: DragEvent) => {
+  const computeHeight = useCallback(
+    (e: DragEvent) => {
       const top = paneRef.current!.getBoundingClientRect().top;
       return Math.max(e.clientY - top, minHeight);
-    };
+    },
+    [minHeight]
+  );
 
-    dragHelper.events.on("dragstart", () => {
-      setPrevHeight(stateRef.current.height);
-    });
+  const dragHelper = useDragHelper();
+  dragHelper.useEventListener("dragstart", () => setPrevHeight(height), [
+    height,
+  ]);
+  dragHelper.useEventListener(
+    "drag",
+    (e) => (paneRef.current!.style.height = `${computeHeight(e)}px`),
+    [computeHeight]
+  );
+  dragHelper.useEventListener("dragend", (e) => setHeight(computeHeight(e)), [
+    computeHeight,
+  ]);
 
-    dragHelper.events.on("drag", (e) => {
-      paneRef.current!.style.height = `${computeHeight(e)}px`;
-    });
-
-    dragHelper.events.on("dragend", (e) => {
-      setHeight(computeHeight(e));
-    });
-  }, []);
-
+  const context = usePaneContext({ direction });
   return (
     <Box
       display="flex"
@@ -68,9 +67,7 @@ export const RootPane = ({
           height,
         }}
       >
-        <PaneContext.Provider value={{ node: paneRef.current, direction }}>
-          {children}
-        </PaneContext.Provider>
+        <PaneContext.Provider value={context}>{children}</PaneContext.Provider>
       </Box>
       <Box
         ref={thumbRef}

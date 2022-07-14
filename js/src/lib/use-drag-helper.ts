@@ -25,18 +25,18 @@ export const useDragHelper = ({ button = 0 }: { button?: number } = {}) => {
       } else {
         const coords = mouseCoordinates(e);
 
-        setDragState((state) => ({
-          ...state,
-          isDragging: false,
-          drop: null,
-        }));
-
         emitter.current.emit("dragend", {
           ...coords,
           start: dragState.start!,
           drop: null,
           originalEvent: e,
         });
+
+        setDragState((state) => ({
+          ...state,
+          isDragging: false,
+          drop: null,
+        }));
       }
     };
 
@@ -44,18 +44,18 @@ export const useDragHelper = ({ button = 0 }: { button?: number } = {}) => {
       if (e.button === button) {
         const coords = mouseCoordinates(e);
 
-        setDragState((state) => ({
-          ...state,
-          isDragging: false,
-          drop: coords,
-        }));
-
         emitter.current.emit("dragend", {
           ...coords,
           start: dragState.start!,
           drop: coords,
           originalEvent: e,
         });
+
+        setDragState((state) => ({
+          ...state,
+          isDragging: false,
+          drop: coords,
+        }));
       }
     };
 
@@ -76,16 +76,16 @@ export const useDragHelper = ({ button = 0 }: { button?: number } = {}) => {
 
           const coords = mouseCoordinates(e.nativeEvent);
 
+          emitter.current.emit("dragstart", {
+            ...coords,
+            originalEvent: e.nativeEvent,
+          });
+
           setDragState((state) => ({
             ...state,
             isDragging: true,
             start: coords,
           }));
-
-          emitter.current.emit("dragstart", {
-            ...coords,
-            originalEvent: e.nativeEvent,
-          });
         }
       }, []),
     }),
@@ -94,24 +94,17 @@ export const useDragHelper = ({ button = 0 }: { button?: number } = {}) => {
 
     state: useObject(dragState),
 
-    useDragCoordinates() {
-      const [coordinates, setCoordinates] = useState<MouseCoordinates | null>(
-        null
-      );
-
+    useEventListener: <E extends keyof DragEvents>(
+      event: E,
+      listener: DragEvents[E],
+      deps: any[]
+    ) => {
       useEffect(() => {
-        const drag = (e: DragEvent) => {
-          setCoordinates(e);
-        };
-
-        emitter.current.on("drag", drag);
-
+        emitter.current.on(event, listener);
         return () => {
-          emitter.current.off("drag", drag);
+          emitter.current.off(event, listener);
         };
-      }, []);
-
-      return coordinates;
+      }, deps);
     },
   });
 };
@@ -159,8 +152,10 @@ export interface DragEndEvent extends MouseCoordinates {
   originalEvent: MouseEvent;
 }
 
-type DragEventsEmitter = TypedEmitter<{
+type DragEvents = {
   dragstart(e: DragStartEvent): void;
   drag(e: DragEvent): void;
   dragend(e: DragEndEvent): void;
-}>;
+};
+
+type DragEventsEmitter = TypedEmitter<DragEvents>;

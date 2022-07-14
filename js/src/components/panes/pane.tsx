@@ -1,72 +1,76 @@
 import Box from "@mui/system/Box";
+import EventEmitter from "events";
 import React, { PropsWithChildren, useState, useEffect, useRef } from "react";
+import TypedEventEmitter from "typed-emitter";
 import { useDragHelper } from "../../lib/use-drag-helper";
-import { useParentPane, PaneContext } from "./pane-context";
+import { useParentPane, PaneContext, usePaneContext } from "./pane-context";
 
 export const Pane = ({
   children,
-  initialWeight = 1,
   direction = "row",
 }: PropsWithChildren<{
-  initialWeight?: number;
   direction?: "row" | "column";
 }>) => {
-  const parent = useParentPane();
-
   const paneRef = useRef<HTMLDivElement>(null);
-
-  const [weight, setWeight] = useState(initialWeight);
+  const parent = useParentPane();
 
   const dragHelper = useDragHelper();
 
-  const stateRef = useRef({ parent, weight });
-  stateRef.current = { parent, weight };
   useEffect(() => {
-    let parentSize: number;
-    let paneRect: DOMRectReadOnly;
-    let initialSize: number;
-    let initialWeight: number;
-
-    const computeWeight = (e: { clientX: number; clientY: number }) => {
-      const { parent } = stateRef.current;
-
-      const targetSize =
-        parent.direction === "row"
-          ? paneRect.right - e.clientX
-          : paneRect.bottom - e.clientY;
-      const ratio = Math.min(Math.max(targetSize / parentSize, 0.1), 0.9);
-      const totalWeight = (initialWeight * parentSize) / initialSize;
-
-      return (ratio / (1 - ratio)) * (totalWeight - initialWeight);
-    };
-
     dragHelper.events.on("dragstart", () => {
-      const { parent, weight } = stateRef.current;
+      parent.events.emit("prebake");
+      parent.events.emit("bake");
 
-      if (!parent.node || !paneRef.current) return;
-      const dim = parent.direction === "row" ? "width" : "height";
-
-      parentSize = parent.node.getBoundingClientRect()[dim];
-      paneRect = paneRef.current.getBoundingClientRect();
-      initialSize = paneRect[dim];
-      initialWeight = weight;
+      paneRef.current!.classList.add("active");
+      parent.events.emit("resizestart");
     });
 
     dragHelper.events.on("drag", (e) => {
-      if (!paneRef.current) return;
-      paneRef.current.style.flexGrow = `${computeWeight(e)}`;
+      const paneRect = paneRef.current!.getBoundingClientRect();
+      const basis =
+        parent.direction === "row"
+          ? e.clientX - paneRect.left
+          : e.clientY - paneRect.top;
+
+      paneRef.current!.style.flexBasis = `${basis}px`;
     });
 
-    dragHelper.events.on("dragend", (e) => {
-      setWeight(computeWeight(e));
+    dragHelper.events.on("dragend", () => {
+      parent.events.emit("prebake");
+      parent.events.emit("bake");
+
+      paneRef.current!.classList.remove("active");
+      parent.events.emit("resizeend");
     });
   }, []);
 
+  useEffect(() => {
+    let basis: number;
+    parent.events.on("prebake", () => {
+      const dim = parent.direction === "row" ? "width" : "height";
+      basis = paneRef.current!.getBoundingClientRect()[dim];
+    });
+
+    parent.events.on("bake", () => {
+      paneRef.current!.style.flexBasis = `${basis}px`;
+    });
+  }, []);
+
+  useEffect(() => {
+    parent.events.on("resizestart", () => {
+      paneRef.current!.classList.add("resizing");
+    });
+
+    parent.events.on("resizeend", () => {
+      paneRef.current!.classList.remove("resizing");
+    });
+  });
+
+  const context = usePaneContext({ direction });
   return (
     <Box
       ref={paneRef}
       position="relative"
-      flexBasis={0}
       className="pane"
       sx={{
         ".pane + &":
@@ -75,9 +79,13 @@ export const Pane = ({
                 borderLeft: 1,
               }
             : { borderTop: 1 },
-      }}
-      style={{
-        flexGrow: weight,
+
+        flexGrow: 1,
+        flexShrink: 1,
+        "&.resizing:not(.active + &)": {
+          flexGrow: 0,
+          flexShrink: 0,
+        },
       }}
     >
       <Box
@@ -86,15 +94,20 @@ export const Pane = ({
         sx={{
           zIndex: 1,
 
-          display: "none",
-          ".pane + .pane &": { display: "block" },
+          // display: "none",
+          ".pane:last-child > &": { display: "none" },
 
           opacity: 0,
           "&:hover": { opacity: 1 },
 
           ...(parent.direction === "row"
-            ? { height: "100%", width: 10, left: -5, cursor: "col-resize" }
-            : { width: "100%", height: 10, top: -5, cursor: "row-resize" }),
+            ? { height: "100%", width: 10, right: -5.5, cursor: "col-resize" }
+            : {
+                width: "100%",
+                height: 10,
+                bottom: -5.5,
+                cursor: "row-resize",
+              }),
         }}
         {...dragHelper.props}
       />
@@ -104,12 +117,9 @@ export const Pane = ({
         height="100%"
         display="flex"
         flexDirection={direction}
-
         overflow="hidden"
       >
-        <PaneContext.Provider value={{ node: paneRef.current, direction }}>
-          {children}
-        </PaneContext.Provider>
+        <PaneContext.Provider value={context}>{children}</PaneContext.Provider>
       </Box>
     </Box>
   );
