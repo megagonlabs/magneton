@@ -64,7 +64,7 @@ export const Pane = ({
     parent.events.on("resizeend", () => {
       paneRef.current!.classList.remove("resizing");
     });
-  });
+  }, []);
 
   const context = usePaneContext({ direction });
   return (
