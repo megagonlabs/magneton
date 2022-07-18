@@ -33,8 +33,6 @@ export const D3Chart = forwardRef(
       initialize,
       draw,
       drawDeps,
-
-      sx,
       ...props
     }: {
       margin?: { top: number; right: number; bottom: number; left: number };
@@ -43,9 +41,7 @@ export const D3Chart = forwardRef(
       ) => d3.Selection<SVGGElement, unknown, d3.BaseType, unknown>[] | void;
       draw: (params: DrawingParams) => void;
       drawDeps: unknown[];
-
-      sx?: SystemCssProperties;
-    } & ComponentPropsWithoutRef<"div">,
+    } & ComponentPropsWithoutRef<typeof Box>,
     ref: Ref<HTMLDivElement>
   ) => {
     const [
@@ -107,12 +103,9 @@ export const D3Chart = forwardRef(
 
     return (
       <Box
-        sx={{
-          width: "100%",
-          height: "100%",
-          position: "absolute",
-          ...sx,
-        }}
+        width="100%"
+        height="100%"
+        position="absolute"
         ref={useForkRef(containerRef, ref)}
         {...props}
       >

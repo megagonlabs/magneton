@@ -44,12 +44,18 @@ export const SummaryView = ({
       </Pane>
       <Pane direction="column">
         <Pane>
-          <AsyncBarChart state={childrenNodeDist} />
+          <AsyncBarChart state={childrenNodeDist} horizontal />
         </Pane>
         <Pane>
           <AsyncBarChart
-            state={degreeDist}
+            state={{
+              ...degreeDist,
+              value: degreeDist.value
+                ?.sort((a, b) => a.y - b.y)
+                .sort((a, b) => a.type.localeCompare(b.type)),
+            }}
             color={(d) => d3["schemeCategory10"][d.type === "in" ? 0 : 1]}
+            horizontal
           />
         </Pane>
       </Pane>

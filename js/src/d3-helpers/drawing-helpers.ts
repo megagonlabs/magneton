@@ -25,17 +25,19 @@ export const helpers = ({
 }) => {
   /** Creates a transition from selection iff not resizing */
   const smartTransition = <S extends Selection>(g: S) =>
-    didResize ? g : (g.transition() as unknown as S);
+    (didResize
+      ? g.transition().duration(0)
+      : g.transition().duration(200)) as unknown as S;
 
   return {
     xAxis:
-      <A extends d3.AxisScale<any>>(x: A) =>
+      <A extends d3.AxisScale<any>>({ scale }: { scale: A }) =>
       <S extends Selection>(g: S) =>
         g
           .call((g) =>
             smartTransition(g).attr("transform", "translate(0," + height + ")")
           )
-          .call(d3.axisBottom(x))
+          .call(d3.axisBottom(scale))
           .selectAll("text")
           .style("text-anchor", "end")
           .attr("dx", "-.8em")
@@ -43,25 +45,46 @@ export const helpers = ({
           .attr("transform", "rotate(-65)"),
 
     yAxis:
-      <A extends d3.AxisScale<any>>(y: A) =>
+      <A extends d3.AxisScale<any>>({
+        scale,
+        hideLabels = false,
+      }: {
+        scale: A;
+        hideLabels?: boolean;
+      }) =>
       <S extends Selection>(g: S) =>
-        smartTransition(g).call(d3.axisLeft(y)),
+        smartTransition(g).call(
+          hideLabels ? d3.axisLeft(scale).tickValues([]) : d3.axisLeft(scale)
+        ),
 
     bars:
-      <X, D extends { x: X; y: any }>(
-        data: D[],
-        x: d3.ScaleBand<X>,
-        y: d3.ScaleLinear<number, number>,
-        color: AttributeValue<D> = d3["schemeCategory10"][0]
-      ) =>
+      <X, D extends { x: X; y: any }>({
+        data,
+        x,
+        y,
+        color = d3["schemeCategory10"][0],
+        horizontal = false,
+      }: {
+        data: D[];
+        x: d3.ScaleBand<X>;
+        y: d3.ScaleLinear<number, number>;
+        color?: AttributeValue<D>;
+        horizontal?: boolean;
+      }) =>
       <S extends Selection>(g: S) => {
         const attr = (g: Selection<D>) =>
-          g
-            .attr("x", (d) => x(d.x)!)
-            .attr("width", x.bandwidth())
-            .attr("y", (d) => y(d.y))
-            .attr("height", (d) => height - y(d.y))
-            .attr("fill", color as any);
+          (horizontal
+            ? g
+                .attr("x", () => y(0))
+                .attr("width", (d) => y(d.y))
+                .attr("y", (d) => x(d.x)!)
+                .attr("height", x.bandwidth())
+            : g
+                .attr("x", (d) => x(d.x)!)
+                .attr("width", x.bandwidth())
+                .attr("y", (d) => y(d.y))
+                .attr("height", (d) => height - y(d.y))
+          ).attr("fill", color as any);
 
         return g
           .selectAll("rect")

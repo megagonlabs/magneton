@@ -28,7 +28,7 @@ const DynamicBarChart = ({
         y.domain([0, d3.max(data, (d: any) => d.y)]);
 
         // append the rectangles for the bar chart
-        const bars = helpers.bars(data, x, y)(g);
+        const bars = helpers.bars({ data, x, y })(g);
         bars
           .style("stroke", (d) => (d === selectedDatum ? "#ff0000" : ""))
           .style("stroke-width", (d) => (d === selectedDatum ? "2px" : "0"))
@@ -38,10 +38,10 @@ const DynamicBarChart = ({
           });
 
         // add the x Axis
-        gx.call(helpers.xAxis(x));
+        gx.call(helpers.xAxis({ scale: x }));
 
         // add the y Axis
-        gy.call(helpers.yAxis(y));
+        gy.call(helpers.yAxis({ scale: y }));
       }}
       drawDeps={[data, selectedDatum]}
     />

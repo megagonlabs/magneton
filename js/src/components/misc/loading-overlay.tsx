@@ -42,7 +42,7 @@ export const LoadingOverlay = ({
               fontSize="large"
               sx={{ color: (theme) => theme.palette.error.main }}
             />
-            <pre style={{ color: "white" }}>{error}</pre>
+            <pre style={{ color: "white", width: 300 }}>{error}</pre>
           </>
         ) : (
           <CircularProgress sx={{ color: "white" }} />
