@@ -64,12 +64,14 @@ export const helpers = ({
         y,
         color = d3["schemeCategory10"][0],
         horizontal = false,
+        onClick = () => {},
       }: {
         data: D[];
         x: d3.ScaleBand<X>;
         y: d3.ScaleLinear<number, number>;
         color?: AttributeValue<D>;
         horizontal?: boolean;
+        onClick?: (event: MouseEvent, datum: D) => void;
       }) =>
       <S extends Selection>(g: S) => {
         const attr = (g: Selection<D>) =>
@@ -92,7 +94,8 @@ export const helpers = ({
           .join(
             (enter) => enter.append("rect").call(attr),
             (update) => smartTransition(update).call(attr)
-          );
+          )
+          .on("click", onClick);
       },
   };
 };

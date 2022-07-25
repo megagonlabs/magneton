@@ -13,7 +13,7 @@ import AsyncBarChart from "./charts/async-bar-chart";
 import * as d3 from "d3";
 
 export const SummaryView = ({
-  data,
+  data: initialNeighborhood,
   ipy_service,
 }: {
   data: GraphData;
@@ -21,30 +21,54 @@ export const SummaryView = ({
 }) => {
   const service = useMemo(() => new ServiceWrapper(ipy_service), [ipy_service]);
 
-  const [selectedType, setSelectedType] = useState<string | undefined>();
+  const [mainNode, setMainNode] = useState<string | undefined>();
+  const [node, setNode] = useState<string | undefined>();
+
+  // const schema = use
+  const neighborhood = useAsync(
+    async () =>
+      mainNode
+        ? await service.get_node_neighborhood(mainNode)
+        : initialNeighborhood,
+    [mainNode]
+  );
   const childrenNodeDist = useAsync(
-    () => service.get_children_node_distributions(selectedType),
-    [selectedType]
+    () => service.get_children_node_distributions(node),
+    [node]
   );
   const degreeDist = useAsync(
-    () => service.get_node_degree_distributions(selectedType),
-    [selectedType]
+    async () =>
+      node ? await service.get_node_degree_distributions(node) : null,
+    [node]
   );
 
   return (
     <RootPane initialHeight={600}>
       <Pane>
-        <SchemaGraph
-          data={data}
-          onTap={(e) => {
-            const type = e.target.data("id");
-            setSelectedType(type);
-          }}
-        />
+        <LoadingOverlay
+          error={neighborhood.error}
+          loading={neighborhood.loading}
+        >
+          {neighborhood.value && (
+            <SchemaGraph
+              data={neighborhood.value}
+              onTap={(e) => {
+                const type = e.target.data("id");
+                setNode(type);
+              }}
+            />
+          )}
+        </LoadingOverlay>
       </Pane>
       <Pane direction="column">
         <Pane>
-          <AsyncBarChart state={childrenNodeDist} horizontal />
+          <AsyncBarChart
+            state={childrenNodeDist}
+            horizontal
+            onClick={(e, d) => {
+              setMainNode(d.x);
+            }}
+          />
         </Pane>
         <Pane>
           <AsyncBarChart

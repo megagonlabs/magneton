@@ -1,5 +1,5 @@
 import * as d3 from "d3";
-import React, { useEffect, useRef } from "react";
+import React from "react";
 import { CategoricalDatum } from "../../types/data-types";
 import { D3Chart } from "../../d3-helpers/d3-chart";
 import { AttributeValue } from "../../d3-helpers/drawing-helpers";
@@ -15,6 +15,7 @@ const BarChart = <D extends CategoricalDatum>({
   marginLeft = horizontal ? 20 : 40,
   marginBottom = horizontal ? 40 : 100,
   marginRight = 20,
+  onClick,
 }: {
   data: D[];
   color?: AttributeValue<D>;
@@ -24,6 +25,7 @@ const BarChart = <D extends CategoricalDatum>({
   marginRight?: number;
   marginBottom?: number;
   marginLeft?: number;
+  onClick?: (event: MouseEvent, datum: D) => void;
 }) => {
   const padding = 0.1;
 
@@ -82,7 +84,9 @@ const BarChart = <D extends CategoricalDatum>({
             const y = scale.y(width, height);
 
             // add the rectangles for the bar chart
-            gbars.call(helpers.bars({ data, x, y, color, horizontal }));
+            gbars.call(
+              helpers.bars({ data, x, y, color, horizontal, onClick })
+            );
 
             // add the independent axis
             gaxis.call(
