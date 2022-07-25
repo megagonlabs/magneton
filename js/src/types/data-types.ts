@@ -15,10 +15,10 @@ export type LinkData = {
 };
 
 export type GraphData = {
-  node_radius: number;
-  link_distance: number;
-  collision_scale: number;
-  link_width_scale: number;
-  graph_json_links: LinkData[];
-  graph_json_nodes: NodeData[];
+  // node_radius: number;
+  // link_distance: number;
+  // collision_scale: number;
+  // link_width_scale: number;
+  edges: LinkData[];
+  nodes: NodeData[];
 };

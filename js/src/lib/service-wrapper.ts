@@ -35,10 +35,18 @@ export class ServiceWrapper {
     return JSON.parse(text) as { x: string; y: number; type: "in" | "out" }[];
   }
 
-  async get_node_neighborhood(node: string) {
+  async get_node_neighborhood(node: {
+    node_label: string;
+    node_property: string;
+    node_property_value: string;
+  }) {
     const text = await ipy_function(
       `${this._service}.get_node_neighborhood(${JSON.stringify(node) ?? ""})`
     );
-    return JSON.parse(text);
+    return JSON.parse(text) as {
+      label: string;
+      target: string;
+      source: string;
+    }[];
   }
 }

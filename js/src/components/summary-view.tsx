@@ -16,30 +16,46 @@ export const SummaryView = ({
   data: initialNeighborhood,
   ipy_service,
 }: {
-  data: GraphData;
+  data: any;
   ipy_service: string;
 }) => {
   const service = useMemo(() => new ServiceWrapper(ipy_service), [ipy_service]);
 
-  const [mainNode, setMainNode] = useState<string | undefined>();
-  const [node, setNode] = useState<string | undefined>();
+  const [nodeTitle, setNodeTitle] = useState<string | undefined>();
+  const [nodeLabel, setNodeLabel] = useState<string | undefined>();
 
-  // const schema = use
-  const neighborhood = useAsync(
-    async () =>
-      mainNode
-        ? await service.get_node_neighborhood(mainNode)
-        : initialNeighborhood,
-    [mainNode]
-  );
+  const neighborhood = useAsync(async () => {
+    if (nodeTitle && nodeLabel) {
+      const edges = await service.get_node_neighborhood({
+        node_label: nodeLabel,
+        node_property: "title",
+        node_property_value: nodeTitle,
+      });
+      const nodeLabels = new Set();
+      edges.forEach((el) => {
+        nodeLabels.add(el.source);
+        nodeLabels.add(el.target);
+      });
+
+      return {
+        nodes: [...nodeLabels].map((id) => ({ id })),
+        edges,
+      };
+    } else
+      return {
+        edges: initialNeighborhood.graph_json_links,
+        nodes: initialNeighborhood.graph_json_nodes,
+      };
+  }, [nodeLabel, nodeTitle]);
+
   const childrenNodeDist = useAsync(
-    () => service.get_children_node_distributions(node),
-    [node]
+    () => service.get_children_node_distributions(nodeLabel),
+    [nodeLabel]
   );
   const degreeDist = useAsync(
     async () =>
-      node ? await service.get_node_degree_distributions(node) : null,
-    [node]
+      nodeLabel ? await service.get_node_degree_distributions(nodeLabel) : null,
+    [nodeLabel]
   );
 
   return (
@@ -54,7 +70,7 @@ export const SummaryView = ({
               data={neighborhood.value}
               onTap={(e) => {
                 const type = e.target.data("id");
-                setNode(type);
+                setNodeLabel(type);
               }}
             />
           )}
@@ -66,7 +82,7 @@ export const SummaryView = ({
             state={childrenNodeDist}
             horizontal
             onClick={(e, d) => {
-              setMainNode(d.x);
+              setNodeTitle(d.x);
             }}
           />
         </Pane>

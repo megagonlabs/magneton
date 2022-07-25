@@ -22,7 +22,7 @@ export const Schema = ({ data }: { data: GraphData }) => {
       }
     > = {};
 
-    data.graph_json_links.forEach(({ source, target }) => {
+    data.edges.forEach(({ source, target }) => {
       const [nodeA, nodeB] = [source, target].sort();
       const edge = (edges[`${nodeA} --> ${nodeB}`] ??= {
         nodeA,
@@ -36,10 +36,10 @@ export const Schema = ({ data }: { data: GraphData }) => {
 
     // Create cytoscape element definitions
     const elements = [
-      ...data.graph_json_nodes.map(({ id }) => ({
+      ...data.nodes.map(({ id }) => ({
         data: { id, label: id },
       })),
-      ...data.graph_json_links.map(({source, target, label}) => ({ data: { source, target, label } }))
+      ...data.edges.map(({source, target, label}) => ({ data: { source, target, label } }))
 
       // ...Object.values(edges).map(({ nodeA, nodeB, count }) => ({
       //   data: {

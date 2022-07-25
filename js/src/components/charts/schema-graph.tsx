@@ -28,7 +28,7 @@ export const SchemaGraph = ({
       }
     > = {};
 
-    data.graph_json_links.forEach(({ source, target }) => {
+    data.edges.forEach(({ source, target }) => {
       const [nodeA, nodeB] = [source, target].sort();
       const edge = (edges[`${nodeA} --> ${nodeB}`] ??= {
         nodeA,
@@ -42,7 +42,7 @@ export const SchemaGraph = ({
 
     // Create cytoscape element definitions
     const elements = [
-      ...data.graph_json_nodes.map(({ id }) => ({
+      ...data.nodes.map(({ id }) => ({
         data: { id, label: id },
       })),
 
@@ -73,6 +73,10 @@ export const SchemaGraph = ({
       };
     }
   }, [cy.current, onTap]);
+
+  useEffect(() => {
+    cy.current?.layout({ name: "circle" }).run();
+  }, [data]);
 
   return (
     <CytoscapeComponent
