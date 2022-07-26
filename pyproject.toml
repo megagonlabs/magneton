@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kyurem"
+version = "0.0.1"
+dependencies = [
+  "idom",
+  "idom-jupyter",
+  "shortuuid",
+  "varname",
+  "pandas"  
+]
+
+[tool.setuptools.package-data]
+mypackage = ["*.js"]

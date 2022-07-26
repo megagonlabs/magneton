@@ -1,0 +1,35 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+idom = "*"
+idom-jupyter = "*"
+shortuuid = "*"
+notebook = "<7"
+ipywidgets = "<8"
+varname = "*"
+pandas = "*"
+
+[dev-packages]
+black = "*"
+build = "*"
+boto3 = "*"
+flask = "*"
+flask-cors = "*"
+werkzeug = "*"
+jsonmerge = "*"
+jsonpath = "*"
+jsonpath-rw = "*"
+jsonpath-ng = "*"
+jsonschema = "*"
+neo4j = "==1.7.2"
+neobolt = "*"
+neotime = "*"
+
+[requires]
+python_version = "3.9"
+
+[pipenv]
+allow_prereleases = true
