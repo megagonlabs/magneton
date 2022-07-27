@@ -9,10 +9,10 @@ type PaneEventEmitter = TypedEventEmitter<{
   bake(): void;
 }>;
 
-export const PaneContext = createContext({
-  direction: "row" as "row" | "column",
-  events: new EventEmitter() as PaneEventEmitter,
-});
+export const PaneContext = createContext<{
+  direction: "row" | "column";
+  events: PaneEventEmitter;
+} | null>(null);
 
 export const usePaneContext = ({
   direction,
