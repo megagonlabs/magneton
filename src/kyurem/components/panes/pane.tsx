@@ -1,14 +1,18 @@
 import Box from "@mui/system/Box";
-import React, { PropsWithChildren, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, ReactNode } from "react";
+import { useContentRect } from "../../lib/use-content-rect";
 import { useDragHelper } from "../../lib/use-drag-helper";
 import { useParentPane, PaneContext, usePaneContext } from "./pane-context";
 
 export const Pane = ({
   children,
   direction = "row",
-}: PropsWithChildren<{
+}: {
   direction?: "row" | "column";
-}>) => {
+  children?:
+    | ReactNode
+    | ((params: { width: number; height: number }) => ReactNode);
+}) => {
   const paneRef = useRef<HTMLDivElement>(null);
   const parent = useParentPane();
 
@@ -90,6 +94,8 @@ export const Pane = ({
     });
   }, []);
 
+  const [containerRef, contentRect] = useContentRect();
+
   const context = usePaneContext({ direction });
   return (
     <Box
@@ -153,6 +159,7 @@ export const Pane = ({
         {...dragHelper.props}
       />
       <Box
+        ref={containerRef}
         position="absolute"
         width="100%"
         height="100%"
@@ -160,7 +167,15 @@ export const Pane = ({
         flexDirection={direction}
         overflow="hidden"
       >
-        <PaneContext.Provider value={context}>{children}</PaneContext.Provider>
+        <PaneContext.Provider value={context}>
+          {typeof children === "function"
+            ? contentRect &&
+              children({
+                width: contentRect.width,
+                height: contentRect.height,
+              })
+            : children}
+        </PaneContext.Provider>
       </Box>
     </Box>
   );
