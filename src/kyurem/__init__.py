@@ -30,9 +30,5 @@ VERSION = Path(_VERSION_PATH).read_text().strip()
 print("kyurem_client: " + VERSION)
 
 # Export widgets
-from .widgets.Distribution import Distribution
-from .widgets.DualDistribution import DualDistribution
-from .widgets.LinkedDistribution import LinkedDistribution
-from .widgets.SummaryView import SummaryView
-from .widgets.Schema import Schema
+from .widgets.Explorer import Explorer
 from .service import Service

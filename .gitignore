@@ -6,3 +6,11 @@ bundle.*.js
 __pycache__
 aws_cred.json
 neo4j_cred.json
+
+.yarn/*
+!.yarn/patches
+!.yarn/releases
+!.yarn/plugins
+!.yarn/sdks
+!.yarn/versions
+.pnp.*

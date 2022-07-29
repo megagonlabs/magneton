@@ -32,11 +32,14 @@
     "react-cytoscapejs": "^1.2.1",
     "react-dom": "^18.2.0",
     "react-use": "^17.4.0",
+    "react-vega": "^7.6.0",
     "ts-loader": "^9.3.1",
     "ts-node": "^10.9.1",
     "typed-emitter": "^2.1.0",
     "typescript": "^4.7.4",
     "uuid": "^8.3.2",
+    "vega": "^5.22.1",
+    "vega-lite": "^5.4.0",
     "webpack": "^5.73.0"
   },
   "devDependencies": {

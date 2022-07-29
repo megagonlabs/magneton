@@ -9,23 +9,28 @@ type PaneEventEmitter = TypedEventEmitter<{
   bake(): void;
 }>;
 
-export const PaneContext = createContext<{
+export const ParentPaneContext = createContext<{
   direction: "row" | "column";
   events: PaneEventEmitter;
 } | null>(null);
 
-export const usePaneContext = ({
+export const useParentPaneContext = ({
   direction,
 }: {
   direction: "row" | "column";
 }) => {
   const contextRef = useRef({
-    direction: "row" as "row" | "column",
     events: new EventEmitter() as PaneEventEmitter,
+    direction: "row" as "row" | "column",
   });
   contextRef.current.direction = direction;
-
   return contextRef.current;
 };
 
-export const useParentPane = () => useContext(PaneContext);
+export const useParentPane = () => useContext(ParentPaneContext);
+
+export const PaneSizeContext = createContext<DOMRectReadOnly | undefined>(
+  undefined
+);
+
+export const usePaneSize = () => useContext(PaneSizeContext);

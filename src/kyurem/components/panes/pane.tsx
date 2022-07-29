@@ -2,7 +2,12 @@ import Box from "@mui/system/Box";
 import React, { useEffect, useRef, useState, ReactNode } from "react";
 import { useContentRect } from "../../lib/use-content-rect";
 import { useDragHelper } from "../../lib/use-drag-helper";
-import { useParentPane, PaneContext, usePaneContext } from "./pane-context";
+import {
+  useParentPane,
+  ParentPaneContext,
+  useParentPaneContext,
+  PaneSizeContext,
+} from "./pane-context";
 
 export const Pane = ({
   children,
@@ -96,7 +101,7 @@ export const Pane = ({
 
   const [containerRef, contentRect] = useContentRect();
 
-  const context = usePaneContext({ direction });
+  const context = useParentPaneContext({ direction });
   return (
     <Box
       ref={paneRef}
@@ -167,15 +172,17 @@ export const Pane = ({
         flexDirection={direction}
         overflow="hidden"
       >
-        <PaneContext.Provider value={context}>
-          {typeof children === "function"
-            ? contentRect &&
-              children({
-                width: contentRect.width,
-                height: contentRect.height,
-              })
-            : children}
-        </PaneContext.Provider>
+        <PaneSizeContext.Provider value={contentRect}>
+          <ParentPaneContext.Provider value={context}>
+            {typeof children === "function"
+              ? contentRect &&
+                children({
+                  width: contentRect.width,
+                  height: contentRect.height,
+                })
+              : children}
+          </ParentPaneContext.Provider>
+        </PaneSizeContext.Provider>
       </Box>
     </Box>
   );

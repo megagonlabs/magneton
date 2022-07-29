@@ -1,8 +1,9 @@
+from collections import defaultdict
 from typing import Any, Callable, Dict, Mapping, TypedDict, Union
 import idom
 from idom import component, use_effect, use_memo, use_state
 from shortuuid import uuid
-from .widget_model import MutationEvent, WidgetModel
+from .widget_model import MutationEvent, WidgetModel, is_widget_model
 from ..idom_loader import load_component
 
 
@@ -17,13 +18,13 @@ class WidgetBase:
         self.__props = props
 
         self.__client_ids = set()
-        self.__setters: Dict[str, Callable] = {}
+        self.__updaters: Dict[str, Callable] = {}
         self.__message_queues: Dict[str, Dict[str, _Message]] = {}
 
-        if isinstance(model, WidgetModel) or model is None:
+        if is_widget_model(model) or model is None:
             self.__model = model
         else:
-            self.__model = WidgetModel(model)
+            self.__model = WidgetModel.make_model(model)
 
     # Helper functions for 2-way communication with component
     def __recv_message(self, type, payload, client_id):
@@ -39,17 +40,21 @@ class WidgetBase:
             del self.__message_queues[client_id][message_id]
 
         elif type == "update_model":
+            payload = defaultdict(None, payload)
+
             key = payload["key"]
             value = payload["value"]
 
-            self.__model.set(key, value, client_id=client_id)
+            WidgetModel.get_backend(self.__model).set(key, value, client_id)
 
         elif type == "call_func":
+            payload = defaultdict(None, payload)
+
             key = payload["key"]
             return_id = payload["returnId"]
             args = payload["args"]
 
-            func = self.__model.get(key)
+            func = self.__model[key]
             self.__send_message(return_id, _call_no_throw(func, args))
 
         else:
@@ -70,51 +75,55 @@ class WidgetBase:
                 "id": message_id,
             }
 
-            self.__flush_messages(client_id)
+            self.__update(client_id)
 
-    def __flush_messages(self, client_id):
-        message_queue = self.__message_queues[client_id]
-        set_messages = self.__setters[client_id]
-
-        set_messages(list(message_queue.values()))
+    def __update(self, client_id):
+        update = self.__updaters[client_id]
+        update()
 
     @component
     def show(self):
         client_id = use_memo(uuid, dependencies=[])
 
-        # Communicate with the component by passing
-        # messages to props. This is translated into
-        # events on the front-end (js) side in widget-wrapper.tsx
-        messages, set_messages = use_state([])
+        # Used to manually trigger updates
+        _, set_counter = use_state(0)
+
+        def update():
+            set_counter(lambda i: i + 1)
 
         # Initialize class members
         def cleanup():
             self.__client_ids.remove(client_id)
-            del self.__setters[client_id]
+            del self.__updaters[client_id]
             del self.__message_queues[client_id]
 
         def init():
             self.__client_ids.add(client_id)
-            self.__setters[client_id] = set_messages
+            self.__updaters[client_id] = update
             self.__message_queues[client_id] = {}
             return cleanup
 
         use_effect(init, dependencies=[])
 
-        # Synchronize model with component
-        model, set_model = use_state(
-            lambda: self.__model.serialize() if self.__model is not None else None
+        # Send messages to component via props
+        messages = (
+            list(self.__message_queues[client_id].values())
+            if client_id in self.__message_queues
+            else []
         )
 
+        # Synchronize model with component
+        model = None if self.__model is None else WidgetModel.serialize(self.__model)
+
+        # Trigger update when model changes
         def observe_model():
             def cb(ev: MutationEvent):
                 if ev.initiator != client_id:
-                    self.__flush_messages(client_id)
-                    set_model(ev.target.serialize())
+                    update()
 
             if self.__model is not None:
-                observer_id = self.__model.observe(cb)
-                return lambda: self.__model.unobserve(observer_id)
+                observer_id = WidgetModel.observe(self.__model, cb)
+                return lambda: WidgetModel.unobserve(self.__model, observer_id)
 
         use_effect(observe_model, dependencies=[])
 

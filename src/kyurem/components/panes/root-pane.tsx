@@ -2,9 +2,13 @@ import { CssBaseline } from "@mui/material";
 import { Box } from "@mui/system";
 import React, { PropsWithChildren, useCallback, useRef, useState } from "react";
 import DehazeIcon from "@mui/icons-material/Dehaze";
-import { PaneContext, usePaneContext } from "./pane-context";
+import {
+  ParentPaneContext as PaneContext,
+  useParentPaneContext as usePaneContext,
+} from "./pane-context";
 import { DragEvent, useDragHelper } from "../../lib/use-drag-helper";
 
+/** @deprecated Use Pane instead */
 export const RootPane = ({
   initialHeight = 400,
   minHeight = 200,

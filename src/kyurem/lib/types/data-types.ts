@@ -13,12 +13,3 @@ export type LinkData = {
   target: string;
   weight: number;
 };
-
-export type GraphData = {
-  // node_radius: number;
-  // link_distance: number;
-  // collision_scale: number;
-  // link_width_scale: number;
-  edges: LinkData[];
-  nodes: NodeData[];
-};
