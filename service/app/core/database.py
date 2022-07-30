@@ -751,8 +751,11 @@ class Database:
         query = ' MATCH ' + source_construct + '-[:' + relation + ']-' + dest_construct + return_stmt
         return self.run_query(query)
 
-    def get_node_degree_distribution(self, label, _type):
-        node = '(n: ' + label + ')'
+    def get_node_degree_distribution(self, label, _type, attribute=None, attribute_value=None):
+        if attribute is None:
+            node = '(n: ' + label + ')'
+        else:
+            node = '(n: ' + label + ' {' + attribute + ':"' + attribute_value + '"})'
         if _type == 'in':
             query = 'MATCH ' + node + '<-[r]-() RETURN type(r) as relation, count(r) as count'
         else:
