@@ -1,7 +1,7 @@
 import uuid, traceback, json
 import pandas as pd
 from .database import Database
-
+from collections import defaultdict
 
 class Graph:
 
@@ -305,14 +305,7 @@ class Graph:
                 "emphasis": "yes"
             })
 
-        neighborhood_edge_set = set(relation_dict.keys())
-
-        graph_edge_list = self.get_graph_edge_list()
-        graph_edge_set = set()
-        for edge in graph_edge_list:
-            graph_edge_set.add((edge['source'], edge['target'], edge['label']))
-
-        deephasized_edge_set = graph_edge_set.difference(neighborhood_edge_set)
+        deephasized_edge_set = self.get_residual_edge_emphasis(relation_dict)
 
         for edge in deephasized_edge_set:
             source, target, _type = edge
@@ -329,6 +322,18 @@ class Graph:
             node_property, node_property_value)
 
         return {'schema':neighborhood_edge_list, 'relation_dist': relation_dist}
+
+    def get_residual_edge_emphasis(self, relation_dict):
+        edge_set = set(relation_dict.keys())
+
+        graph_edge_list = self.get_graph_edge_list()
+        graph_edge_set = set()
+        for edge in graph_edge_list:
+            graph_edge_set.add((edge['source'], edge['target'], edge['label']))
+
+        deephasized_edge_set = graph_edge_set.difference(edge_set)
+
+        return deephasized_edge_set
 
     def get_relation_neighborhood_schema(self, node, relation):
         node_label = node['node_label']
@@ -349,44 +354,6 @@ class Graph:
                  'YIELD node ' +
                  'RETURN node')
         print(query)
-        result_list = self.neo4j_conn.run_query(query)
-
-        edge_list = []
-        for res in result_list:
-            if direction == 'in':
-                source = res['node'][node_property] 
-                target = node_property_value
-            else:
-                target = res['node'][node_property]
-                source = node_property_value
-
-            edge_list.append({
-                "source": source,
-                "target": target,
-                "weight": 1,
-                "label": relationship_name
-            })
-        return edge_list
-
-    def get_relation_neighborhood_schema(self, node, relation):
-        node_label = node['node_label']
-        node_property = node['node_property']
-        node_property_value = node['node_property_value']
-        
-        relationship_name = relation['type']
-        direction = relation['direction']
-
-        if direction == 'in':
-            relation_param = "<" + relationship_name
-        else:
-            relation_param = relationship_name + ">"
-
-        query = ('MATCH (n:' + node_label + ' {' + node_property + ':"' + 
-                  node_property_value + '"}) ' +
-                 'CALL apoc.neighbors.athop(n, "' + relation_param + '", 1) ' +
-                 'YIELD node ' +
-                 'RETURN node')
-        
         result_list = self.neo4j_conn.run_query(query)
 
         edge_list = []
@@ -407,16 +374,42 @@ class Graph:
         return edge_list
 
     def get_relation_neighborhood_summary(self, node, relation):
+        relationship_name = relation['type']
+        direction = relation['direction']
         if node is None:
-            print("get node label distribution")
-            return None
+            edge_list = []
+            graph_edge_list = self.get_graph_edge_list()
+            for edge in graph_edge_list:
+                if relationship_name == edge['label']:
+                    edge_list.append(edge)
+                else:
+                    edge['emphasis'] = 'no'
+                    edge_list.append(edge)
+
+            node_dict = defaultdict(set)
+            query = ('MATCH (a)-[r:' + relationship_name + ']->(b)'+
+                ' RETURN a.title as node_a, labels(a) as labels_a,'+
+                ' b.title as node_b, labels(b) as labels_b')
+            result_list = self.neo4j_conn.run_query(query)
+
+            for res in result_list:
+                labels_a = res['labels_a']
+                labels_b = res['labels_b']
+                for label in labels_a:
+                    node_dict[label].add(res['node_a'])
+                for label in labels_b:
+                    node_dict[label].add(res['node_b'])
+            node_dist = {}
+
+            for key, value in node_dict.items():
+                node_dist[key] = len(value)
+
+            return {'schema':edge_list, 'node_dist': node_dist}
 
         node_label = node['node_label']
         node_property = node['node_property']
         node_property_value = node['node_property_value']
         
-        relationship_name = relation['type']
-        direction = relation['direction']
 
         if direction == 'in':
             relation_param = "<" + relationship_name
@@ -427,23 +420,52 @@ class Graph:
                   node_property_value + '"}) ' +
                  'CALL apoc.neighbors.athop(n, "' + relation_param + '", 1) ' +
                  'YIELD node ' +
-                 'RETURN node')
-        print(query)
+                 'RETURN node, labels(node) as node_labels')
         result_list = self.neo4j_conn.run_query(query)
 
         edge_list = []
+        relation_dict = {}
+        node_dist = defaultdict(int)
         for res in result_list:
             if direction == 'in':
-                source = res['node'][node_property] 
-                target = node_property_value
+                for label in res['node_labels']:
+                    source = label 
+                    target = node_label
+                    key = (source, target, relationship_name)
+                    if key not in relation_dict:
+                        relation_dict[key] = 1
+                    node_dist[res['node'][node_property]] += 1
             else:
-                target = res['node'][node_property]
-                source = node_property_value
+                for label in res['node_labels']:
+                    source = node_label 
+                    target = label
+                    key = (source, target, relationship_name)
+                    if key not in relation_dict:
+                        relation_dict[key] = 1
+                    node_dist[res['node'][node_property]] += 1
 
+        for key, value in relation_dict.items():
+            source, target, _type = key
+            weight = value
             edge_list.append({
                 "source": source,
                 "target": target,
-                "weight": 1,
-                "label": relationship_name
+                "weight": value,
+                "label": _type,
+                "emphasis": "yes"
             })
-        return edge_list
+
+        deephasized_edge_set = self.get_residual_edge_emphasis(relation_dict)
+
+        for edge in deephasized_edge_set:
+            source, target, _type = edge
+            weight = 1
+            edge_list.append({
+                "source": source,
+                "target": target,
+                "weight": weight,
+                "label": _type,
+                "emphasis": "no"
+            })
+
+        return {'schema':edge_list, 'node_dist': node_dist}
