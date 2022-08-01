@@ -1,2 +1,2 @@
-export { useWidgetModel } from "./hooks";
+export { useWidgetData } from "./hooks";
 export { bind } from "./widget-wrapper";

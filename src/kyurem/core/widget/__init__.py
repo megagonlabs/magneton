@@ -1,2 +1,2 @@
 from .widget_base import WidgetBase
-from .widget_base import WidgetModel
+from .widget_data import WidgetData

@@ -15,20 +15,21 @@ type Message = { type: string; payload: any; id: string };
 
 type ModelProperty<T = any> =
   | { type: "function" }
+  | { type: "collection"; model: any }
   | { type: "value"; value: T }
   | { type: "native"; value: T };
 
-type Model<M extends {} = any> = {
+export type WidgetDataModel<M extends {} = any> = {
   [K in keyof M]: ModelProperty<M[K]>;
 };
 
 export const WidgetWrapperContext = React.createContext<{
-  model: Model;
-  updateModel: (key: string, value: any) => void;
+  model: WidgetDataModel;
+  updateWidgetData: (key: string, value: any) => void;
   callFunc: (key: string, ...args: any) => Promise<any>;
 }>({
   model: {},
-  updateModel() {},
+  updateWidgetData() {},
   async callFunc() {},
 });
 
@@ -42,7 +43,7 @@ export const WidgetWrapper = ({
   layoutContext: LayoutContext;
   clientId: string;
   messages: Message[];
-  model: Model;
+  model: WidgetDataModel;
 }>) => {
   // Use an EventEmitter to simulate and listen for
   // messages from the back-end
@@ -105,7 +106,7 @@ export const WidgetWrapper = ({
     <WidgetWrapperContext.Provider
       value={{
         model: localModel,
-        updateModel,
+        updateWidgetData: updateModel,
         callFunc,
       }}
     >

@@ -1,14 +1,13 @@
 import React from "react";
-import { VegaHelper } from "../components/vega-helper";
 import { Pane } from "../components/panes/pane";
-import { useWidgetModel } from "../core/widget";
+import { useWidgetData } from "../core/widget";
 import { SchemaGraph } from "../components/schema-graph";
 import { useAsync } from "react-use";
 import AsyncBarChart from "../components/charts/async-bar-chart";
 import * as d3 from "d3";
 
 export const Explorer = () => {
-  const model = useWidgetModel();
+  const model = useWidgetData();
 
   const childData = useAsync(
     async () => await model.children_distribution(model.current_node),
@@ -57,10 +56,13 @@ export const Explorer = () => {
             color={(d: any) => d3["schemeCategory10"][d.type === "in" ? 0 : 1]}
             horizontal
             onClick={async (e, d) => {
-              model.schema = await model.relation_neighborhood_schema({
-                type: d.x,
-                direction: d.type,
-              });
+              model.schema = await model.relation_neighborhood_schema(
+                {},
+                {
+                  type: d.x,
+                  direction: d.type,
+                }
+              );
             }}
           />
         </Pane>

@@ -1,9 +1,8 @@
-from collections import defaultdict
 from typing import Any, Callable, Dict, Mapping, TypedDict, Union
 import idom
 from idom import component, use_effect, use_memo, use_state
 from shortuuid import uuid
-from .widget_model import MutationEvent, WidgetModel, is_widget_model
+from .widget_data import WidgetData
 from ..idom_loader import load_component
 
 
@@ -12,7 +11,7 @@ class WidgetBase:
         self,
         component_name: str,
         props: Any = {},
-        model: Union[WidgetModel, Mapping, None] = None,
+        data: Union[WidgetData, Mapping] = {},
     ):
         self.__component = load_component(component_name)
         self.__props = props
@@ -21,10 +20,7 @@ class WidgetBase:
         self.__updaters: Dict[str, Callable] = {}
         self.__message_queues: Dict[str, Dict[str, _Message]] = {}
 
-        if is_widget_model(model) or model is None:
-            self.__model = model
-        else:
-            self.__model = WidgetModel.make_model(model)
+        self.__data = WidgetData.create_from(data)
 
     # Helper functions for 2-way communication with component
     def __recv_message(self, type, payload, client_id):
@@ -40,21 +36,17 @@ class WidgetBase:
             del self.__message_queues[client_id][message_id]
 
         elif type == "update_model":
-            payload = defaultdict(None, payload)
-
             key = payload["key"]
             value = payload["value"]
 
-            WidgetModel.get_backend(self.__model).set(key, value, client_id)
+            self.__data[key] = value
 
         elif type == "call_func":
-            payload = defaultdict(None, payload)
-
             key = payload["key"]
             return_id = payload["returnId"]
             args = payload["args"]
 
-            func = self.__model[key]
+            func = self.__data[key]
             self.__send_message(return_id, _call_no_throw(func, args))
 
         else:
@@ -113,17 +105,13 @@ class WidgetBase:
         )
 
         # Synchronize model with component
-        model = None if self.__model is None else WidgetModel.serialize(self.__model)
+        model = WidgetData.export(self.__data)
 
         # Trigger update when model changes
         def observe_model():
-            def cb(ev: MutationEvent):
-                if ev.initiator != client_id:
-                    update()
-
-            if self.__model is not None:
-                observer_id = WidgetModel.observe(self.__model, cb)
-                return lambda: WidgetModel.unobserve(self.__model, observer_id)
+            if self.__data is not None:
+                observer_id = WidgetData.observe(self.__data, update)
+                return lambda: WidgetData.unobserve(self.__data, observer_id)
 
         use_effect(observe_model, dependencies=[])
 
