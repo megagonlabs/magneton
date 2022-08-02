@@ -1,47 +1,39 @@
 import { useContext } from "react";
-import { WidgetDataModel, WidgetWrapperContext } from "./widget-wrapper";
+import { WidgetWrapperContext } from "./widget-wrapper";
 
-export const useWidgetData = <M extends {} = any>() => {
-  const {
-    model,
-    callFunc,
-    updateWidgetData: updateModel,
-  } = useContext(WidgetWrapperContext);
+export const useWidgetModel = <M extends Record<string, any> = any>() => {
+  const { model, callFunc, updateModel } = useContext(WidgetWrapperContext);
 
   // Create a proxy to parse the model properties and make them act like regular
   // javascript objects.
 
-  const proxify = (model: WidgetDataModel): M =>
-    new Proxy(model, {
-      get(target, key, receiver) {
-        if (typeof key === "symbol") {
-          return Reflect.get(target, key, receiver);
-        } else {
-          const property = target[key];
-          if (!property) {
-            return undefined;
-          }
-
-          if (property.type === "value" || property.type === "native") {
-            return property.value;
-          } else if (property.type === "collection") {
-            return proxify(property.model);
-          } else if (property.type === "function") {
-            return (...args: any) => callFunc(key, ...args);
+  const proxify = (path: (string | number)[], value: any): any => {
+    if (!value || typeof value !== "object") {
+      return value;
+    } else if (Array.isArray(value)) {
+      return value.map((x, i) => proxify([...path, i], x));
+    } else if ((value as any).__callable__) {
+      return (...args: any) => callFunc(path, ...args);
+    } else {
+      return new Proxy(value, {
+        get(target, key, receiver) {
+          if (typeof key === "symbol") {
+            return Reflect.get(target, key, receiver);
           } else {
-            throw new Error("Unknown property type encountered");
+            return proxify([...path, key], target[key]);
           }
-        }
-      },
-      set(target, key, value, receiver) {
-        if (typeof key === "symbol") {
-          return Reflect.set(target, key, value, receiver);
-        } else {
-          updateModel(key, value);
-          return true;
-        }
-      },
-    }) as M;
+        },
+        set(target, key, value, receiver) {
+          if (typeof key === "symbol") {
+            return Reflect.set(target, key, value, receiver);
+          } else {
+            updateModel([...path, key], value);
+            return true;
+          }
+        },
+      });
+    }
+  };
 
-  return proxify(model);
+  return proxify([], model) as M;
 };

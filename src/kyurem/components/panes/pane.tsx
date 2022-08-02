@@ -10,9 +10,11 @@ import {
 } from "./pane-context";
 
 export const Pane = ({
+  initialHeight = 400,
   children,
   direction = "row",
 }: {
+  initialHeight?: number;
   direction?: "row" | "column";
   children?:
     | ReactNode
@@ -26,7 +28,7 @@ export const Pane = ({
   // Handle events for root panes
   const minHeight = 100;
 
-  const [height, setHeight] = useState<number>();
+  const [height, setHeight] = useState<number>(initialHeight);
   const [growHeight, setGrowHeight] = useState<number>();
   useEffect(() => {
     if (parent) return;
@@ -110,7 +112,7 @@ export const Pane = ({
       sx={{
         // Set the height manually if the pane is a "root" pane
         // i.e., not a descendent of another pane
-        height: 400,
+        height: initialHeight,
         border: 1,
         mb: "5px",
         ".pane &": {

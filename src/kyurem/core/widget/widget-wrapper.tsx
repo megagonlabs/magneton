@@ -13,23 +13,13 @@ export interface LayoutContext {
 
 type Message = { type: string; payload: any; id: string };
 
-type ModelProperty<T = any> =
-  | { type: "function" }
-  | { type: "collection"; model: any }
-  | { type: "value"; value: T }
-  | { type: "native"; value: T };
-
-export type WidgetDataModel<M extends {} = any> = {
-  [K in keyof M]: ModelProperty<M[K]>;
-};
-
 export const WidgetWrapperContext = React.createContext<{
-  model: WidgetDataModel;
-  updateWidgetData: (key: string, value: any) => void;
-  callFunc: (key: string, ...args: any) => Promise<any>;
+  model: any;
+  updateModel: (path: (string | number)[], value: any) => void;
+  callFunc: (path: (string | number)[], ...args: any) => Promise<any>;
 }>({
   model: {},
-  updateWidgetData() {},
+  updateModel() {},
   async callFunc() {},
 });
 
@@ -43,7 +33,7 @@ export const WidgetWrapper = ({
   layoutContext: LayoutContext;
   clientId: string;
   messages: Message[];
-  model: WidgetDataModel;
+  model: any;
 }>) => {
   // Use an EventEmitter to simulate and listen for
   // messages from the back-end
@@ -82,20 +72,23 @@ export const WidgetWrapper = ({
   }, [model]);
 
   // Helpers for using model
-  const updateModel = (key: string, value: any) => {
+  const updateModel = (path: (number | string)[], value: any) => {
     // Update local model
-    setLocalModel((model) => ({
-      ...model,
-      [key]: { type: "native" as const, value },
-    }));
+    setLocalModel((model: any) => {
+      const base = path.slice(0, -1);
+      const key = path[path.length - 1];
+      const m = base.reduce((m, key) => m[key], model);
+      m[key] = value;
+      return { ...model };
+    });
     // Update model in back-end
-    sendMessage("update_model", { key, value });
+    sendMessage("update_model", { path, value });
   };
 
-  const callFunc = async (key: string, ...args: any[]) => {
+  const callFunc = async (path: (string | number)[], ...args: any[]) => {
     const returnId = uuid();
 
-    sendMessage("call_func", { key, returnId, args });
+    sendMessage("call_func", { path, returnId, args });
 
     const [value, err] = await recvMessage(returnId);
     if (err) throw err;
@@ -106,7 +99,7 @@ export const WidgetWrapper = ({
     <WidgetWrapperContext.Provider
       value={{
         model: localModel,
-        updateWidgetData: updateModel,
+        updateModel: updateModel,
         callFunc,
       }}
     >

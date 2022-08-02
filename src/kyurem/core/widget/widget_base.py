@@ -2,7 +2,7 @@ from typing import Any, Callable, Dict, Mapping, TypedDict, Union
 import idom
 from idom import component, use_effect, use_memo, use_state
 from shortuuid import uuid
-from .widget_data import WidgetData
+from .widget_model import WidgetModel
 from ..idom_loader import load_component
 
 
@@ -11,7 +11,7 @@ class WidgetBase:
         self,
         component_name: str,
         props: Any = {},
-        data: Union[WidgetData, Mapping] = {},
+        model: Union[WidgetModel, Mapping] = {},
     ):
         self.__component = load_component(component_name)
         self.__props = props
@@ -20,7 +20,7 @@ class WidgetBase:
         self.__updaters: Dict[str, Callable] = {}
         self.__message_queues: Dict[str, Dict[str, _Message]] = {}
 
-        self.__data = WidgetData.create_from(data)
+        self.__data = WidgetModel.proxy(model)
 
     # Helper functions for 2-way communication with component
     def __recv_message(self, type, payload, client_id):
@@ -33,20 +33,21 @@ class WidgetBase:
 
         if type == "message_ack":
             message_id = payload
-            del self.__message_queues[client_id][message_id]
+            if message_id in self.__message_queues[client_id]:
+                del self.__message_queues[client_id][message_id]
 
         elif type == "update_model":
-            key = payload["key"]
+            path = payload["path"]
             value = payload["value"]
 
-            self.__data[key] = value
+            WidgetModel.set(self.__data, path, value, tag=client_id)
 
         elif type == "call_func":
-            key = payload["key"]
+            path = payload["path"]
             return_id = payload["returnId"]
             args = payload["args"]
 
-            func = self.__data[key]
+            func = WidgetModel.get(self.__data, path)
             self.__send_message(return_id, _call_no_throw(func, args))
 
         else:
@@ -105,13 +106,16 @@ class WidgetBase:
         )
 
         # Synchronize model with component
-        model = WidgetData.export(self.__data)
+        model = WidgetModel.export(self.__data)
 
         # Trigger update when model changes
         def observe_model():
-            if self.__data is not None:
-                observer_id = WidgetData.observe(self.__data, update)
-                return lambda: WidgetData.unobserve(self.__data, observer_id)
+            def cb(tag):
+                if tag != client_id:
+                    update()
+
+            observer_id = WidgetModel.observe(self.__data, cb)
+            return lambda: WidgetModel.unobserve(self.__data, observer_id)
 
         use_effect(observe_model, dependencies=[])
 
@@ -143,7 +147,7 @@ def _call_no_throw(func, args):
     except Exception as e:
         value = None
         error = e.args
-    return value, error
+    return value, None if not error else str(error)
 
 
 class _Message(TypedDict):

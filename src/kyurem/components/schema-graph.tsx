@@ -4,9 +4,12 @@ import CytoscapeComponent from "react-cytoscapejs";
 import * as d3 from "d3";
 import cytoscape from "cytoscape";
 
-const multiplyLightness = (color: string, factor: number) => {
+const adjustLightness = (
+  color: string,
+  { clamp }: { clamp: [number, number] }
+) => {
   const c = d3.lab(color);
-  c.l *= factor;
+  c.l = Math.max(clamp[0], Math.min(clamp[1], c.l));
   return c.formatRgb();
 };
 
@@ -14,7 +17,7 @@ export const SchemaGraph = ({
   data,
   onTap,
 }: {
-  data: LinkData[];
+  data: (LinkData & { emphasis: "yes" | "no" })[];
   onTap?: (ev: cytoscape.InputEventObject) => void;
 }) => {
   const elements = useMemo(() => {
@@ -25,12 +28,13 @@ export const SchemaGraph = ({
         nodeA: string;
         nodeB: string;
         count: number;
+        emph: number;
       }
     > = {};
 
     const nodes = new Set<string>();
 
-    data.forEach(({ source, target }) => {
+    data.forEach(({ source, target, emphasis = "no" }) => {
       nodes.add(source);
       nodes.add(target);
 
@@ -39,11 +43,15 @@ export const SchemaGraph = ({
         nodeA,
         nodeB,
         count: 0,
+        emph: 0,
       });
+
       edge.count++;
+      if (emphasis === "yes") edge.emph += 1;
     });
 
     const maxCount = Math.max(...Object.values(edges).map((e) => e.count));
+    const maxEmph = Math.max(...Object.values(edges).map((e) => e.emph), 1);
 
     // Create cytoscape element definitions
     const elements = [
@@ -51,17 +59,18 @@ export const SchemaGraph = ({
         data: { id, label: id },
       })),
 
-      ...Object.values(edges).map(({ nodeA, nodeB, count }) => ({
-        data: {
-          source: nodeA,
-          target: nodeB,
-          width: Math.max((15 * count) / maxCount, 1),
-          color: multiplyLightness(
-            d3.interpolateGnBu(count / maxCount),
-            count / maxCount
-          ),
-        },
-      })),
+      ...Object.values(edges).map(({ nodeA, nodeB, count, emph }) => {
+        return {
+          data: {
+            source: nodeA,
+            target: nodeB,
+            width: Math.max((15 * emph) / maxEmph, 1),
+            color: adjustLightness(d3.interpolateGreys(emph / maxEmph), {
+              clamp: [20, 80],
+            }),
+          },
+        };
+      }),
     ];
 
     return elements;
@@ -98,8 +107,7 @@ export const SchemaGraph = ({
           style: {
             width: "data(width)",
             "line-color": "data(color)",
-            // "target-arrow-shape": "triangle"
-          },
+          } as any,
         },
       ]}
       cy={(instance) => {

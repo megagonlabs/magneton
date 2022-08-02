@@ -1,10 +1,9 @@
-from typing import Union
-from ..core.widget import WidgetBase, WidgetData
+from ..core.widget import WidgetBase, WidgetModel
 
 
 class Explorer(WidgetBase):
     def __init__(self, model=None):
         if model == None:
-            model = WidgetData.Object()
-        super().__init__("Explorer", data=model)
+            model = WidgetModel.proxy({}, dotdict=True)
+        super().__init__("Explorer", model=model)
         self.model = model

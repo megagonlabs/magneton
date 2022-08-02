@@ -13,7 +13,7 @@ const BarChart = <D extends CategoricalDatum>({
   minBarSize = 20,
   marginTop = 20,
   marginLeft = horizontal ? 20 : 40,
-  marginBottom = horizontal ? 40 : 100,
+  marginBottom = horizontal ? 40 : 140,
   marginRight = 20,
   onClick,
 }: {
