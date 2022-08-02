@@ -102,7 +102,7 @@ class Graph:
             relation_dist[result['relation']] = result['count']
         return dict(sorted(relation_dist.items(), key=lambda item: item[1]))
 
-    def get_node_degree_distributions(self, nodeType, node_property, node_property_value):
+    def get_node_degree_distributions(self, nodeType, node_property=None, node_property_value=None):
         results_in = self.neo4j_conn.get_node_degree_distribution(nodeType, 'in',
             node_property, node_property_value)
         results_out = self.neo4j_conn.get_node_degree_distribution(nodeType, 'out',
