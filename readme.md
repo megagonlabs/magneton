@@ -22,7 +22,7 @@ git clone git@github.com:rit-git/kyurem.gitgit@github.com:
 cd kyurem
 ```
 
-### 2. Install dependencies
+### 2a. Install dependencies (with pipenv already installed)
 
 Next, install dependencies with the following commands.
 
@@ -35,6 +35,21 @@ pipenv install --dev
 # Install javascript dependencies
 yarn install # or `npm install`
 ```
+
+#### 2b. Install dependencies (If you are using Conda)
+
+First, install ``pyenv``:
+```sh
+brew update
+brew install pyenv
+```
+
+Then install ``pipenv``:
+```sh
+pipenv --python=$(conda run which python) --site-packages
+```
+
+Then repeat the steps in ``2a``.
 
 ## Building and Debugging
 
