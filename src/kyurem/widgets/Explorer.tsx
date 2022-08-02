@@ -104,18 +104,21 @@ export const Explorer = () => {
               error: relationState.error,
               value: model.relation_dist
                 ?.sort((a: any, b: any) => a.y - b.y)
-                .sort((a: any, b: any) => a.type.localeCompare(b.type)),
+                .sort((a: any, b: any) =>
+                  (a.type ?? "").localeCompare(b.type ?? "")
+                ),
             }}
-            color={(d: any) => d3["schemeCategory10"][d.type === "in" ? 0 : 1]}
+            color={(d: any) =>
+              d3["schemeCategory10"][
+                d.type === "in" ? 0 : d.type === "out" ? 1 : 2
+              ]
+            }
             horizontal
             onClick={async (e, d) => {
-              model.schema = await model.relation_neighborhood_schema(
-                {},
-                {
-                  type: d.x,
-                  direction: d.type,
-                }
-              );
+             await model.relation_neighborhood_schema(null, {
+                type: d.x,
+                direction: d.type,
+              });
             }}
           />
         </Pane>
