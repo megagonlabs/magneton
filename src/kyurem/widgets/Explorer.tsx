@@ -49,8 +49,6 @@ export const Explorer = () => {
           node_property_value: model.selected_title,
         });
 
-        console.log(schema, relation_dist);
-
         model.schema = schema;
         model.relation_dist = Object.entries(relation_dist).map(
           ([key, { count, type }]: any) => ({ x: key, y: count, type })
@@ -65,6 +63,36 @@ export const Explorer = () => {
     })();
   }, [model.selected_title]);
 
+  useEffect(() => {
+    (async () => {
+      if (!model.selected_relation) return;
+
+      setSchemaState({ loading: true });
+      setChildrenState({ loading: true });
+      try {
+        const { node_dist, schema } = await model.relation_neighborhood_schema(
+          null,
+          {
+            type: model.selected_relation.type,
+            direction: model.selected_relation.direction,
+          }
+        );
+
+        model.schema = schema;
+        model.children_dist = Object.entries(node_dist).map(([x, y]: any) => ({
+          x,
+          y,
+        }));
+
+        setSchemaState({ loading: false });
+        setChildrenState({ loading: false });
+      } catch (e) {
+        setSchemaState({ error: e });
+        setChildrenState({ error: e });
+      }
+    })();
+  }, [model.selected_relation?.type, model.selected_relation?.direction]);
+
   return (
     <Pane initialHeight={800}>
       <Pane>
@@ -76,7 +104,7 @@ export const Explorer = () => {
             <SchemaGraph
               data={model.schema}
               onTap={async (e) => {
-                model.selected_label = e.target.data("id");
+                model.selected_label = e.target.data("id") ?? null;
                 model.selected_title = "";
               }}
             />
@@ -115,10 +143,7 @@ export const Explorer = () => {
             }
             horizontal
             onClick={async (e, d) => {
-             await model.relation_neighborhood_schema(null, {
-                type: d.x,
-                direction: d.type,
-              });
+              model.selected_relation = { type: d.x, direction: d.type };
             }}
           />
         </Pane>

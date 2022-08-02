@@ -5,6 +5,7 @@ import { D3Chart } from "../../lib/d3-helpers/d3-chart";
 import { AttributeValue } from "../../lib/d3-helpers/drawing-helpers";
 import Box from "@mui/system/Box";
 import { measureTextWidth } from "../../lib/text-size";
+import { usePaneSize } from "../panes/pane-context";
 
 const BarChart = <D extends CategoricalDatum>({
   data,
@@ -13,7 +14,7 @@ const BarChart = <D extends CategoricalDatum>({
   minBarSize = 20,
   marginTop = 20,
   marginLeft = horizontal ? 20 : 40,
-  marginBottom = horizontal ? 40 : 140,
+  marginBottom = horizontal ? 20 : 20,
   marginRight = 20,
   onClick,
 }: {
@@ -29,14 +30,15 @@ const BarChart = <D extends CategoricalDatum>({
 }) => {
   const padding = 0.1;
 
-  const minSize = data.length * (minBarSize + padding);
+  const minChartSize = data.length * (minBarSize + padding);
+
   const scale = {
     x: (width: number, height: number) =>
       d3
         .scaleBand()
         .padding(padding)
         .domain(data.map((d: any) => d.x))
-        .range([0, Math.max(horizontal ? height : width, minSize)]),
+        .range([0, Math.max(horizontal ? height : width, minChartSize)]),
 
     y: (width: number, height: number) =>
       d3
@@ -44,6 +46,8 @@ const BarChart = <D extends CategoricalDatum>({
         .domain([0, d3.max(data, (d: any) => d.y)])
         .range(horizontal ? [0, width] : [height, 0]),
   };
+
+  const paneRect = usePaneSize();
 
   return (
     <Box
@@ -72,11 +76,16 @@ const BarChart = <D extends CategoricalDatum>({
             bottom: marginBottom,
             right: marginRight,
           }}
-          initialize={(g) => [g.append("g"), g.append("g"), g.append("g")]}
+          initialize={(g) => [
+            g.append("g"),
+            g.append("g"),
+            g.append("g"),
+            g.append("g"),
+          ]}
           draw={({
             width,
             height,
-            groups: [gbars, gaxis, glabels],
+            groups: [ggrid, gbars, gaxis, glabels],
             helpers,
           }) => {
             // set the ranges
@@ -95,6 +104,29 @@ const BarChart = <D extends CategoricalDatum>({
                 : helpers.xAxis({ scale: x })
             );
 
+            // add gridlines
+            ggrid
+              .selectAll("line")
+              .data(y.ticks())
+              .join("line")
+              .attr("fill", "none")
+              .attr("stroke", "rgba(0,0,0,0.1)")
+              .attr("stroke-width", "1px")
+              .call((g) =>
+                horizontal
+                  ? g
+                      .attr("x1", y)
+                      .attr("x2", y)
+                      .attr("y1", 0)
+                      .attr("y2", height)
+                  : g
+                      .attr("y1", y)
+                      .attr("y2", y)
+                      .attr("x1", 0)
+                      .attr("x2", width)
+              );
+
+            // Overlay labels in horiz. mode
             if (horizontal) {
               glabels
                 .selectAll("text")
@@ -119,21 +151,16 @@ const BarChart = <D extends CategoricalDatum>({
                 visibility: "hidden",
               },
             }),
-            [horizontal ? "minHeight" : "minWidth"]: minSize + 56,
+            ...(paneRect &&
+              (horizontal
+                ? minChartSize + marginBottom + marginTop > paneRect.height && {
+                    height: minChartSize + marginBottom + marginTop,
+                  }
+                : minChartSize + marginLeft + marginRight > paneRect.width && {
+                    width: minChartSize + marginLeft + marginRight,
+                  })),
           }}
         />
-
-        {!horizontal && (
-          <Box
-            position="fixed"
-            width={40}
-            height="100%"
-            sx={{
-              background:
-                "linear-gradient(.25turn, rgba(255,255,255,1), rgba(255,255,255,0))",
-            }}
-          />
-        )}
 
         <D3Chart
           margin={{
