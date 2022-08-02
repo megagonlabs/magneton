@@ -23,10 +23,10 @@ export const helpers = ({
   didResize: boolean;
 }) => {
   /** Creates a transition from selection iff not resizing */
-  const smartTransition = <S extends Selection>(g: S) =>
-    (didResize
-      ? g.transition().duration(0)
-      : g.transition().duration(200)) as unknown as S;
+  const smartTransition = <S extends Selection>(g: S) => g; // Disable transitions for now
+  // (didResize
+  //   ? g.transition().duration(0)
+  //   : g.transition().duration(200)) as unknown as S;
 
   return {
     xAxis:
@@ -36,12 +36,7 @@ export const helpers = ({
           .call((g) =>
             smartTransition(g).attr("transform", "translate(0," + height + ")")
           )
-          .call(d3.axisBottom(scale))
-          .selectAll("text")
-          .style("text-anchor", "end")
-          .attr("dx", "-.8em")
-          .attr("dy", ".15em")
-          .attr("transform", "rotate(-65)"),
+          .call(d3.axisBottom(scale)),
 
     yAxis:
       <A extends d3.AxisScale<any>>({
