@@ -44,7 +44,7 @@ export const Explorer = () => {
       setRelationState({ loading: true });
       try {
         const { relation_dist, schema } = await model.node_neighborhood_schema({
-          node_label: model.selected_label,
+          node_label: !model.selected_label ? model.selected_title : model.selected_label,
           node_property: "title",
           node_property_value: model.selected_title,
         });

@@ -375,7 +375,6 @@ class Graph:
 
     def get_relation_neighborhood_summary(self, node, relation):
         relationship_name = relation['type']
-        direction = relation['direction']
         if node is None:
             edge_list = []
             graph_edge_list = self.get_graph_edge_list()
@@ -410,6 +409,7 @@ class Graph:
         node_property = node['node_property']
         node_property_value = node['node_property_value']
         
+        direction = relation['direction']
 
         if direction == 'in':
             relation_param = "<" + relationship_name
