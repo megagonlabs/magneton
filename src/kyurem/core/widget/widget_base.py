@@ -1,9 +1,12 @@
-from typing import Any, Callable, Dict, Mapping, TypedDict, Union
+import asyncio
+from collections import defaultdict
+from typing import Any, Callable, Dict, Mapping, List, TypedDict, Union
 import idom
 from idom import component, use_effect, use_memo, use_state
 from shortuuid import uuid
 from .widget_model import WidgetModel
 from ..idom_loader import load_component
+from asyncio import Future, get_running_loop, iscoroutinefunction
 
 
 class WidgetBase:
@@ -16,14 +19,21 @@ class WidgetBase:
         self.__component = load_component(component_name)
         self.__props = props
 
-        self.__client_ids = set()
+        self.__component_ids = set()
         self.__updaters: Dict[str, Callable] = {}
-        self.__message_queues: Dict[str, Dict[str, _Message]] = {}
 
-        self.__data = WidgetModel.proxy(model)
+        self.__message_seq = 0
+        self.__message_queues: Dict[str, List[_Message]] = defaultdict(list, {})
+
+        self.__receivers = {}
+
+        self.__render_count = 0
+        self.__render_listeners = {}
+
+        self.__model = WidgetModel.proxy(model)
 
     # Helper functions for 2-way communication with component
-    def __recv_message(self, type, payload, client_id):
+    def __recv_message(self, type, payload, component_id):
         """
         Handles messages sent from the component.
 
@@ -32,51 +42,109 @@ class WidgetBase:
         """
 
         if type == "message_ack":
-            message_id = payload
-            if message_id in self.__message_queues[client_id]:
-                del self.__message_queues[client_id][message_id]
+            # Remove acknowledged messages
+            message_ack = payload
+            queue = self.__message_queues[component_id]
+            while queue != [] and queue[0]["seq"] <= message_ack:
+                queue.pop(0)
 
         elif type == "update_model":
+            # Receive updates from component
             path = payload["path"]
             value = payload["value"]
 
-            WidgetModel.set(self.__data, path, value, tag=client_id)
+            WidgetModel.set(self.__model, path, value, tag=component_id)
 
         elif type == "call_func":
+            # Call and return result from function
+
             path = payload["path"]
             return_id = payload["returnId"]
             args = payload["args"]
 
-            func = WidgetModel.get(self.__data, path)
-            self.__send_message(return_id, _call_no_throw(func, args))
+            func = WidgetModel.get(self.__model, path)
 
-        else:
-            print(f"Warning: Received message of unknown type '{type}'")
+            if iscoroutinefunction(func):
+                # Special logic for async functions
+                _exec_async(
+                    _async_call_no_throw(
+                        func, args, lambda result: self.send_message(return_id, result)
+                    )
+                )
+            else:
+                self.send_message(return_id, _call_no_throw(func, args))
 
-    def __send_message(self, type, payload):
+        # Notify any additional message receivers
+        if type in self.__receivers:
+            for wrapper in list(self.__receivers[type].values()):
+                wrapper(type, payload, component_id)
+
+    class MessageReceiverHandler:
+        def __init__(self, stop: Callable):
+            self.stop = stop
+
+    def recv_message(self, type, cb):
+        """
+        Receive messages from component
+        """
+        rcvr_id = uuid()
+        self.__receivers.setdefault(type, {})[rcvr_id] = cb
+
+        def stop():
+            if type in self.__receivers and rcvr_id in self.__receivers[type]:
+                del self.__receivers[type][rcvr_id]
+
+        return WidgetBase.MessageReceiverHandler(stop=stop)
+
+    def send_message(self, type, payload):
         """
         Send a message to the component.
         """
         # Add messages to queue/trigger a re-render
-        message_id = uuid()
-        for client_id in self.__client_ids:
-            message_queue = self.__message_queues[client_id]
+        self.__message_seq += 1
+        message_seq = self.__message_seq
+        for component_id in self.__component_ids:
+            queue = self.__message_queues[component_id]
+            queue.append(
+                {
+                    "type": type,
+                    "payload": payload,
+                    "seq": message_seq,
+                }
+            )
 
-            message_queue[message_id] = {
-                "type": type,
-                "payload": payload,
-                "id": message_id,
-            }
+            self.__update(component_id)
 
-            self.__update(client_id)
-
-    def __update(self, client_id):
-        update = self.__updaters[client_id]
+    def __update(self, component_id):
+        update = self.__updaters[component_id]
         update()
 
+    def flush(self):
+        cb_id = uuid()
+        component_ids = set(self.__component_ids)
+
+        try:
+            future = get_running_loop().create_future()
+        except RuntimeError:
+            future = Future()
+
+        def cb(component_id):
+            if component_id in component_ids:
+                component_ids.remove(component_id)
+            if len(component_ids) == 0:
+                del self.__render_listeners[cb_id]
+                future.set_result(None)
+
+        self.__render_listeners[cb_id] = cb
+
+        for component_id in self.__component_ids:
+            self.__update(component_id)
+
+        return future
+
     @component
-    def show(self):
-        client_id = use_memo(uuid, dependencies=[])
+    def component(self):
+        component_id = use_memo(uuid, dependencies=[])
 
         # Used to manually trigger updates
         _, set_counter = use_state(0)
@@ -86,43 +154,46 @@ class WidgetBase:
 
         # Initialize class members
         def cleanup():
-            self.__client_ids.remove(client_id)
-            del self.__updaters[client_id]
-            del self.__message_queues[client_id]
+            self.__component_ids.remove(component_id)
+            del self.__updaters[component_id]
+            del self.__message_queues[component_id]
 
         def init():
-            self.__client_ids.add(client_id)
-            self.__updaters[client_id] = update
-            self.__message_queues[client_id] = {}
+            self.__component_ids.add(component_id)
+            self.__updaters[component_id] = update
             return cleanup
 
         use_effect(init, dependencies=[])
 
         # Send messages to component via props
-        messages = (
-            list(self.__message_queues[client_id].values())
-            if client_id in self.__message_queues
-            else []
-        )
+        messages = list(self.__message_queues[component_id])
 
         # Synchronize model with component
-        model = WidgetModel.export(self.__data)
+        model = WidgetModel.export(self.__model)
 
         # Trigger update when model changes
         def observe_model():
             def cb(tag):
-                if tag != client_id:
+                if tag != component_id:
                     update()
 
-            observer_id = WidgetModel.observe(self.__data, cb)
-            return lambda: WidgetModel.unobserve(self.__data, observer_id)
+            observer_id = WidgetModel.observe(self.__model, cb)
+            return lambda: WidgetModel.unobserve(self.__model, observer_id)
 
         use_effect(observe_model, dependencies=[])
+
+        # Notify render listeners
+        def notify_render_listeners():
+            for cb in list(self.__render_listeners.values()):
+                cb(component_id)
+
+        self.__render_count += 1
+        use_effect(notify_render_listeners, [self.__render_count])
 
         return self.__component(
             {
                 "wrapperProps": {
-                    "clientId": client_id,
+                    "clientId": component_id,
                     "messages": messages,
                     "model": model,
                 },
@@ -146,11 +217,35 @@ def _call_no_throw(func, args):
         error = None
     except Exception as e:
         value = None
-        error = e.args
+        error = e.args[0]
+
     return value, None if not error else str(error)
+
+
+async def _async_call_no_throw(func, args, cb):
+    """
+    Call given async function, but catch any errors and return as tuple
+    """
+    try:
+        value = await func(*args)
+        error = None
+    except Exception as e:
+        value = None
+        error = e.args[0]
+
+    result = (value, None if not error else str(error))
+    cb(result)
+
+
+def _exec_async(coro):
+    try:
+        loop = get_running_loop()
+        asyncio.run_coroutine_threadsafe(coro, loop)
+    except RuntimeError:
+        asyncio.run(coro)
 
 
 class _Message(TypedDict):
     type: str
     payload: Any
-    id: str
+    seq: int

@@ -11,16 +11,20 @@ export interface LayoutContext {
   sendEvent(data: EventData): void;
 }
 
-type Message = { type: string; payload: any; id: string };
+type Message = { type: string; payload: any; seq: number };
 
 export const WidgetWrapperContext = React.createContext<{
   model: any;
   updateModel: (path: (string | number)[], value: any) => void;
   callFunc: (path: (string | number)[], ...args: any) => Promise<any>;
+  sendMessage: (type: string, payload: any) => void;
+  receiver: EventEmitter;
 }>({
   model: {},
   updateModel() {},
   async callFunc() {},
+  sendMessage() {},
+  receiver: new EventEmitter(),
 });
 
 export const WidgetWrapper = ({
@@ -53,15 +57,20 @@ export const WidgetWrapper = ({
   // IDOM sends messages to the component by changing the
   // lastMessage prop. This emits an event based on the
   // received message
+  const messageAck = useRef(0);
   useEffect(() => {
-    if (messages)
+    if (messages) {
       messages.forEach((message) => {
-        // broadcast message
-        receiver.emit(message.type, message.payload);
-
-        // send an acknowledgement that message was received
-        sendMessage("message_ack", message.id);
+        // broadcast message if not already seen
+        if (message.seq > messageAck.current) {
+          receiver.emit(message.type, message.payload);
+          messageAck.current = message.seq;
+        }
       });
+
+      // acknowledgement of last message
+      sendMessage("message_ack", messageAck.current);
+    }
   }, [messages]);
 
   // Store the model parameters as state, and keep local model
@@ -101,6 +110,8 @@ export const WidgetWrapper = ({
         model: localModel,
         updateModel: updateModel,
         callFunc,
+        sendMessage,
+        receiver,
       }}
     >
       {children}

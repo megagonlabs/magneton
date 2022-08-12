@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Pane } from "../components/panes/pane";
 import { useWidgetModel } from "../core/widget";
 import { SchemaGraph } from "../components/schema-graph";
@@ -6,106 +6,21 @@ import AsyncBarChart from "../components/charts/async-bar-chart";
 import * as d3 from "d3";
 import { LoadingOverlay } from "../components/loading-overlay";
 
-type AsyncState = { loading?: boolean; error?: any };
-
 export const Explorer = () => {
   const model = useWidgetModel();
-  const [schemaState, setSchemaState] = useState<AsyncState>({});
-  const [childrenState, setChildrenState] = useState<AsyncState>({});
-  const [relationState, setRelationState] = useState<AsyncState>({});
-
-  useEffect(() => {
-    (async () => {
-      setChildrenState({ loading: true });
-      setRelationState({ loading: true });
-      try {
-        const [children_dist, relation_dist] = await Promise.all([
-          model.children_distribution(model.selected_label),
-          model.relation_distribution(model.selected_label),
-        ]);
-
-        model.children_dist = children_dist;
-        model.relation_dist = relation_dist;
-
-        setChildrenState({ loading: false });
-        setRelationState({ loading: false });
-      } catch (e) {
-        setChildrenState({ error: e });
-        setRelationState({ error: e });
-      }
-    })();
-  }, [model.selected_label]);
-
-  useEffect(() => {
-    (async () => {
-      if (!model.selected_title) return;
-
-      setSchemaState({ loading: true });
-      setRelationState({ loading: true });
-      try {
-        const { relation_dist, schema } = await model.node_neighborhood_schema({
-          node_label: !model.selected_label ? model.selected_title : model.selected_label,
-          node_property: "title",
-          node_property_value: model.selected_title,
-        });
-
-        model.schema = schema;
-        model.relation_dist = Object.entries(relation_dist).map(
-          ([key, { count, type }]: any) => ({ x: key, y: count, type })
-        );
-
-        setSchemaState({ loading: false });
-        setRelationState({ loading: false });
-      } catch (e) {
-        setSchemaState({ error: e });
-        setRelationState({ error: e });
-      }
-    })();
-  }, [model.selected_title]);
-
-  useEffect(() => {
-    (async () => {
-      if (!model.selected_relation) return;
-
-      setSchemaState({ loading: true });
-      setChildrenState({ loading: true });
-      try {
-        const { node_dist, schema } = await model.relation_neighborhood_schema(
-          null,
-          {
-            type: model.selected_relation.type,
-            direction: model.selected_relation.direction,
-          }
-        );
-
-        model.schema = schema;
-        model.children_dist = Object.entries(node_dist).map(([x, y]: any) => ({
-          x,
-          y,
-        }));
-
-        setSchemaState({ loading: false });
-        setChildrenState({ loading: false });
-      } catch (e) {
-        setSchemaState({ error: e });
-        setChildrenState({ error: e });
-      }
-    })();
-  }, [model.selected_relation?.type, model.selected_relation?.direction]);
 
   return (
     <Pane initialHeight={800}>
       <Pane>
         <LoadingOverlay
-          loading={!!schemaState.loading}
-          error={schemaState.error}
+          loading={model.status.schema?.loading}
+          error={model.status.schema?.error}
         >
-          {model.schema && (
+          {model.data.schema && (
             <SchemaGraph
-              data={model.schema}
+              data={model.data.schema}
               onTap={async (e) => {
-                model.selected_label = e.target.data("id") ?? null;
-                model.selected_title = "";
+                model.actions.filter_by_type(e.target.data("id") ?? null);
               }}
             />
           )}
@@ -115,22 +30,22 @@ export const Explorer = () => {
         <Pane>
           <AsyncBarChart
             state={{
-              loading: !!childrenState.loading,
-              error: childrenState.error,
-              value: model.children_dist,
+              loading: model.status.children?.loading,
+              error: model.status.children?.error,
+              value: model.data.children,
             }}
             horizontal
             onClick={async (e, d) => {
-              model.selected_title = d.x;
+              model.actions.filter_by_title(d.x);
             }}
           />
         </Pane>
         <Pane>
           <AsyncBarChart
             state={{
-              loading: !!relationState.loading,
-              error: relationState.error,
-              value: model.relation_dist
+              loading: model.status.relations?.loading,
+              error: model.status.relations?.error,
+              value: model.data.relations
                 ?.sort((a: any, b: any) => a.y - b.y)
                 .sort((a: any, b: any) =>
                   (a.type ?? "").localeCompare(b.type ?? "")
@@ -143,7 +58,7 @@ export const Explorer = () => {
             }
             horizontal
             onClick={async (e, d) => {
-              model.selected_relation = { type: d.x, direction: d.type };
+              model.actions.filter_by_relation(d.x, d.type);
             }}
           />
         </Pane>
