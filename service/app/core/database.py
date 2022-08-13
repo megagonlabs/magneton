@@ -705,27 +705,22 @@ class Database:
 
         return 0
 
-    def get_nodes_by_relation_and_type(self, source_label, source_filter,
-                                       source_filter_value, dest_label,
-                                       dest_filter, dest_filter_value,
-                                       relation, return_type, count_type):
+    def get_nodes_by_relation_and_type(self, source_label, source_filter, dest_label,
+                                       dest_filter, relation, return_type, count_type):
         result = self._read_transaction(self._get_nodes_by_relation_and_type,
-                                        source_label, source_filter,
-                                        source_filter_value, dest_label,
-                                        dest_filter, dest_filter_value,
-                                        relation, return_type, count_type)
+                                        source_label, source_filter, dest_label,
+                                        dest_filter, relation, return_type, count_type)
 
         return result
 
-    def _get_nodes_by_relation_and_type(self, tx, source_label, source_filter,
-                                        source_filter_value, dest_label,
-                                        dest_filter, dest_filter_value,
-                                        relation, return_type, count_type):
+    def _get_nodes_by_relation_and_type(self, tx, source_label, source_filter, dest_label,
+                                        dest_filter, relation, return_type, count_type):
         # MATCH (n:attribute {type:'class'})-[:specialization]->(a:attribute {type:'instance'}) RETURN n.title, count(a)
+        print(source_label, source_filter, dest_label, dest_filter)
         source_construct = '(src)'
         dest_construct = '(dest)'
         if source_label is not None and source_filter is not None:
-            source_construct = '(src: ' + source_label + '{' + source_filter + ': "' + source_filter_value + '"})'
+            source_construct = '(src: ' + source_label + ' {' + ', '.join([ str(key) + ':' + ( _safe_neo4j_attribute_value(source_filter[key]) ) for key in list(source_filter.keys())]) + '})'
         elif source_label is not None and source_filter is None:
             source_construct = '(src: ' + source_label + ')'
         elif source_label is None and source_filter is None:
@@ -735,7 +730,7 @@ class Database:
             return
 
         if dest_label is not None and dest_filter is not None:
-            dest_construct = '(dest: ' + dest_label + '{' + dest_filter + ': "' + dest_filter_value + '"})'
+            dest_construct = '(dest: ' + dest_label + ' {' + ', '.join([ str(key) + ':' + ( _safe_neo4j_attribute_value(dest_filter[key]) ) for key in list(dest_filter.keys())]) + '})'
         elif dest_label is not None and dest_filter is None:
             dest_construct = '(src: ' + dest_label + ')'
         elif dest_label is None and dest_filter is None:
@@ -749,6 +744,7 @@ class Database:
             return_stmt += ', count(src) as node_count' if count_type == 'source' else ', count(dest) as node_count'
 
         query = ' MATCH ' + source_construct + '-[:' + relation + ']-' + dest_construct + return_stmt
+        print(query)
         return self.run_query(query)
 
     def get_node_degree_distribution(self, label, _type, attribute=None, attribute_value=None):

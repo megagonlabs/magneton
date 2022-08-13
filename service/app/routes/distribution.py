@@ -1,4 +1,4 @@
-from flask import jsonify, make_response, g
+from flask import jsonify, make_response, g, request
 from app.flask_app import app
 
 
@@ -16,9 +16,12 @@ def get_node_granularity_distributions(nodetype: str):
     result = g.profile.get_node_granularity_distributions(nodetype)
     return make_response(jsonify(result), 200)
 
-@app.get('/children_distributions/<nodetype>')
-def get_node_children_node_distributions(nodetype: str):
-    result = g.profile.get_children_node_distributions(nodetype)
+@app.get('/children_distributions')
+def get_node_children_node_distributions():
+    node = request.json.get('node', None)
+    if node is None:
+        return make_response('Bad request: \'node schemas\' is missing', 400)
+    result = g.profile.get_children_node_distributions(node)
     return make_response(jsonify(result), 200)
 
 @app.get('/degree_distributions/<nodetype>')

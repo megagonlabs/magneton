@@ -63,17 +63,17 @@ class Graph:
                             None, node_property, value)
         return nodeGranularityCount
 
-    def get_children_stat_by_node_type(self, nodeType=None):
-        if nodeType == 'all':
+    def get_children_stat_by_node_type(self, node):
+        if node['node_type'] == 'all':
             return self.get_stat_by_node_label()
 
-        source_label = nodeType
-        source_filter = 'type'
-        source_filter_value = 'class'
+        source_label = node['node_type']
+        source_filter = {}
+        source_filter['type'] = 'class'
 
-        dest_label = nodeType
-        dest_filter = 'type'
-        dest_filter_value = 'instance'
+        dest_label = node['node_type']
+        dest_filter = {}
+        dest_filter['type'] = 'instance'
 
         relation = 'specialization'
 
@@ -81,9 +81,8 @@ class Graph:
         count_node_type = 'dest'
 
         results = self.neo4j_conn.get_nodes_by_relation_and_type(
-            source_label, source_filter, source_filter_value, dest_label,
-            dest_filter, dest_filter_value, relation, return_node_type,
-            count_node_type)
+            source_label, source_filter, dest_label, dest_filter, 
+            relation, return_node_type, count_node_type)
 
         compiled_results = {}
 
@@ -181,7 +180,7 @@ class Graph:
             })
         return edge_list
 
-    def get_node_neighborhood_graph(self, node):
+    def get_node_neighborhood_graph_summary(self, node):
         node_label = node['node_label']
         node_property = node['node_property']
         node_property_value = node['node_property_value']
@@ -198,24 +197,37 @@ class Graph:
                  'WITH elements, index ' +
                  'WHERE index %2 = 0 ' +
                  'RETURN elements[index] AS source, ' +
-                 'elements[index+1] AS relation, ' + 
-                 'elements[index+2] AS target')
+                 'labels(elements[index]) AS source_labels, ' + 
+                 'type(elements[index+1]) AS relation, ' + 
+                 'elements[index+2] AS target,' +
+                 'labels(elements[index+2]) AS target_labels'
+                 )
         result_list = self.neo4j_conn.run_query(query)
 
-        edge_list = []
+        neighborhood_edge_list = []
+        relation_dict = {}
         for res in result_list:
-            # TODO: __DATASET__ node property except as it's "type"
             try:
-                edge_list.append({
-                    "source": res['source'][node_property],
-                    "target": res['target'][node_property],
+                source_labels = res['source_labels']
+                source_name = res['source'][node_property]
+                target_labels = res['target_labels']
+                target_name = res['target'][node_property]
+                relation_label = res['relation']
+
+                neighborhood_edge_list.append({
+                    "source": source_name,
+                    "target": target_name,
                     "weight": 1,
-                    "label": res['relation']['type']
+                    "label": relation_label,
+                    "emphasis": "yes"
                 })
             except:
-              print(res)
+                print(res)
             
-        return edge_list
+        relation_dist = self.get_node_degree_distributions(node_label, 
+            node_property, node_property_value)
+
+        return {'schema':neighborhood_edge_list, 'relation_dist': relation_dist}
 
     def get_node_neighborhood_schema(self, node):
         node_label = node['node_label']
