@@ -70,6 +70,7 @@ class Graph:
         source_label = node['node_type']
         source_filter = {}
         source_filter['type'] = 'class'
+        source_filter[node['node_property']] = node['node_property_value']
 
         dest_label = node['node_type']
         dest_filter = {}
@@ -90,6 +91,46 @@ class Graph:
 
         for result in results:
             compiled_results[result[key]['title']] = result['node_count'] + 1
+        return dict(sorted(compiled_results.items(), key=lambda item: item[1]))
+
+    def get_children_stat_by_node_type_v1(self, node):
+        if node['node_type'] == 'all':
+            return self.get_stat_by_node_label()
+
+        source_label = node['node_type']
+        source_filter = {}
+        #source_filter['type'] = 'class'
+        source_filter[node['node_property']] = node['node_property_value']
+
+        dest_label = node['node_type']
+        dest_filter = {}
+        #dest_filter['type'] = 'instance'
+
+        relation = 'specialization'
+
+        return_node_type = 'dest'
+        count_node_type = 'dest'
+
+        immediate_children = self.neo4j_conn.get_nodes_by_relation_and_type(
+            source_label, source_filter, dest_label, dest_filter, 
+            relation, return_node_type, count_node_type)
+
+        compiled_results = {}
+
+        key1 = 'src' if return_node_type == 'source' else 'dest'
+
+        for child in immediate_children:
+            source_filter = {}
+            source_filter[node['node_property']] = child[key1][node['node_property']]
+            return_node_type = 'source'
+            count_node_type = 'dest'
+            results = self.neo4j_conn.get_nodes_by_relation_and_type(
+                source_label, source_filter, dest_label, dest_filter, 
+                relation, return_node_type, count_node_type)
+            key2 = 'src' if return_node_type == 'source' else 'dest'
+
+            for result in results:
+                compiled_results[result[key2]['title']] = result['node_count'] + 1
         return dict(sorted(compiled_results.items(), key=lambda item: item[1]))
 
     def relation_count(self):
@@ -124,6 +165,33 @@ class Graph:
             relation_dist[k] = {'count':v, 'type':'in'}
         for k,v in out_ls:
             relation_dist[k] = {'count':v, 'type':'out'}
+        return relation_dist
+
+    def get_node_degree_distributions_v1(self, nodeType, node_property=None, node_property_value=None):
+        results_in = self.neo4j_conn.get_node_degree_distribution(nodeType, 'in',
+            node_property, node_property_value)
+        results_out = self.neo4j_conn.get_node_degree_distribution(nodeType, 'out',
+            node_property, node_property_value)
+        relation_dist = {}
+        relation_dist['in'] = []
+        relation_dist['out'] = []
+
+        temp_dict = {}
+        for result in results_in:
+            temp_dict[result['relation']] = result['count']
+
+        in_ls = sorted(temp_dict.items(), key=lambda item: item[1])
+
+        temp_dict = {}
+        for result in results_out:
+            temp_dict[result['relation']] = result['count']
+
+        out_ls = sorted(temp_dict.items(), key=lambda item: item[1])
+
+        for k,v in in_ls:
+            relation_dist['in'].append({'label':k, 'count':v})
+        for k,v in out_ls:
+            relation_dist['out'].append({'label':k, 'count':v})
         return relation_dist
 
     def is_skippable(self, res, exclude_labels, include_labels):
@@ -224,7 +292,7 @@ class Graph:
             except:
                 print(res)
             
-        relation_dist = self.get_node_degree_distributions(node_label, 
+        relation_dist = self.get_node_degree_distributions_v1(node_label, 
             node_property, node_property_value)
 
         return {'schema':neighborhood_edge_list, 'relation_dist': relation_dist}
@@ -365,7 +433,7 @@ class Graph:
                  'CALL apoc.neighbors.athop(n, "' + relation_param + '", 1) ' +
                  'YIELD node ' +
                  'RETURN node')
-        print(query)
+        #print(query)
         result_list = self.neo4j_conn.run_query(query)
 
         edge_list = []
