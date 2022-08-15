@@ -549,3 +549,86 @@ class Graph:
             })
 
         return {'schema':edge_list, 'node_dist': node_dist}
+
+    def get_relation_neighborhood_graph_summary(self, node, relation):
+        relationship_name = relation['type']
+        if node is None:
+            edge_list = []
+            
+            node_dict = defaultdict(set)
+            query = ('MATCH (a)-[r:' + relationship_name + ']->(b)'+
+                ' RETURN a.title as node_a, labels(a) as labels_a,'+
+                ' b.title as node_b, labels(b) as labels_b')
+            result_list = self.neo4j_conn.run_query(query)
+
+            for res in result_list:
+                labels_a = res['labels_a']
+                labels_b = res['labels_b']
+                weight = 1
+                for label_a in labels_a:
+                    node_dict[label_a].add(res['node_a'])
+                    for label_b in labels_b:
+                        node_dict[label_b].add(res['node_b'])
+                        edge_list.append({
+                            "source": label_a,
+                            "target": label_b,
+                            "weight": weight,
+                            "label": relationship_name,
+                            "emphasis": "yes"
+                        })
+            node_dist = {}
+
+            for key, value in node_dict.items():
+                node_dist[key] = len(value)
+
+            return {'schema':edge_list, 'node_dist': node_dist}
+
+        node_label = node['node_label']
+        node_property = node['node_property']
+        node_property_value = node['node_property_value']
+        
+        direction = relation['direction']
+
+        if direction == 'in':
+            relation_param = "<" + relationship_name
+        else:
+            relation_param = relationship_name + ">"
+
+        query = ('MATCH (n:' + node_label + ' {' + node_property + ':"' + 
+                  node_property_value + '"}) ' +
+                 'CALL apoc.neighbors.athop(n, "' + relation_param + '", 1) ' +
+                 'YIELD node ' +
+                 'RETURN node, labels(node) as node_labels')
+        result_list = self.neo4j_conn.run_query(query)
+
+        edge_list = []
+        relation_dict = {}
+        
+        for res in result_list:
+            if direction == 'in':
+                for label in res['node_labels']:
+                    source = res['node'][node_property] 
+                    target = node_property_value
+                    key = (source, target, relationship_name)
+                    if key not in relation_dict:
+                        relation_dict[key] = 1
+            else:
+                for label in res['node_labels']:
+                    source = node_property_value 
+                    target = res['node'][node_property] 
+                    key = (source, target, relationship_name)
+                    if key not in relation_dict:
+                        relation_dict[key] = 1
+
+        for key, value in relation_dict.items():
+            source, target, _type = key
+            weight = value
+            edge_list.append({
+                "source": source,
+                "target": target,
+                "weight": value,
+                "label": _type,
+                "emphasis": "yes"
+            })
+
+        return {'schema':edge_list, 'node_dist': {}}

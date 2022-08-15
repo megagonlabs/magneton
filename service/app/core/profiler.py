@@ -50,5 +50,5 @@ class Profiler:
         return self.graph.get_node_neighborhood_graph_summary(node)
 
     def get_relation_neighborhood(self, node, relation):
-        return self.graph.get_relation_neighborhood_summary(node, relation)
+        return self.graph.get_relation_neighborhood_graph_summary(node, relation)
         
