@@ -1,5 +1,4 @@
 from ..core.widget import WidgetBase, WidgetModel
-from asyncio import run
 
 
 class Explorer:
