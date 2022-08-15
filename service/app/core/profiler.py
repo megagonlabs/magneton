@@ -29,8 +29,8 @@ class Profiler:
             distribution_list.append({"x": key, "y": value})
         return distribution_list
 
-    def get_children_node_distributions(self, nodeType=None):
-        distribution = self.graph.get_children_stat_by_node_type(nodeType)
+    def get_children_node_distributions(self, node):
+        distribution = self.graph.get_children_stat_by_node_type_v1(node)
         distribution_list = []
         for key, value in distribution.items():
             distribution_list.append({"x": key, "y": value})
@@ -44,11 +44,11 @@ class Profiler:
         return distribution_list
 
     def get_kh_edge_list(self):
-        return self.graph.get_graph_edge_list()
+        return self.graph.get_graph_edge_list_v1()
 
     def get_node_neighborhood(self, node):
-        return self.graph.get_node_neighborhood_summary(node)
+        return self.graph.get_node_neighborhood_graph_summary(node)
 
     def get_relation_neighborhood(self, node, relation):
-        return self.graph.get_relation_neighborhood_summary(node, relation)
+        return self.graph.get_relation_neighborhood_graph_summary(node, relation)
         

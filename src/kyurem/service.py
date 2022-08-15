@@ -68,14 +68,24 @@ class Service:
             raise Exception(response.text)
         return parsed_result
 
-    def get_children_node_distributions(self, node_type=None):
-        if node_type is None:
-            nodetype = 'all'
-        else:
-            nodetype = node_type
-        path = self.get_service_endpoint('get_children_node_distributions').format(
-            nodetype=nodetype)
+    def get_children_node_distributions(self, node_type=None, node_property=None, node_property_value=None):
+        path = self.get_service_endpoint('get_children_node_distributions')
         payload = self.get_base_payload()
+
+        node = {}
+        if node_type:
+            node['node_type'] = node_type
+        else:
+            node['node_type'] = 'all'
+
+        if node_property:
+            node['node_property'] = node_property
+
+        if node_property_value:
+            node['node_property_value'] = node_property_value
+
+        payload['node'] = node
+
         response = get_request(path, json=payload)
         if response.status_code == 200:
             parsed_result = response.json()

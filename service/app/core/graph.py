@@ -63,17 +63,18 @@ class Graph:
                             None, node_property, value)
         return nodeGranularityCount
 
-    def get_children_stat_by_node_type(self, nodeType=None):
-        if nodeType == 'all':
+    def get_children_stat_by_node_type(self, node):
+        if node['node_type'] == 'all':
             return self.get_stat_by_node_label()
 
-        source_label = nodeType
-        source_filter = 'type'
-        source_filter_value = 'class'
+        source_label = node['node_type']
+        source_filter = {}
+        source_filter['type'] = 'class'
+        source_filter[node['node_property']] = node['node_property_value']
 
-        dest_label = nodeType
-        dest_filter = 'type'
-        dest_filter_value = 'instance'
+        dest_label = node['node_type']
+        dest_filter = {}
+        dest_filter['type'] = 'instance'
 
         relation = 'specialization'
 
@@ -81,9 +82,8 @@ class Graph:
         count_node_type = 'dest'
 
         results = self.neo4j_conn.get_nodes_by_relation_and_type(
-            source_label, source_filter, source_filter_value, dest_label,
-            dest_filter, dest_filter_value, relation, return_node_type,
-            count_node_type)
+            source_label, source_filter, dest_label, dest_filter, 
+            relation, return_node_type, count_node_type)
 
         compiled_results = {}
 
@@ -91,6 +91,46 @@ class Graph:
 
         for result in results:
             compiled_results[result[key]['title']] = result['node_count'] + 1
+        return dict(sorted(compiled_results.items(), key=lambda item: item[1]))
+
+    def get_children_stat_by_node_type_v1(self, node):
+        if node['node_type'] == 'all':
+            return self.get_stat_by_node_label()
+
+        source_label = node['node_type']
+        source_filter = {}
+        #source_filter['type'] = 'class'
+        source_filter[node['node_property']] = node['node_property_value']
+
+        dest_label = node['node_type']
+        dest_filter = {}
+        #dest_filter['type'] = 'instance'
+
+        relation = 'specialization'
+
+        return_node_type = 'dest'
+        count_node_type = 'dest'
+
+        immediate_children = self.neo4j_conn.get_nodes_by_relation_and_type(
+            source_label, source_filter, dest_label, dest_filter, 
+            relation, return_node_type, count_node_type)
+
+        compiled_results = {}
+
+        key1 = 'src' if return_node_type == 'source' else 'dest'
+
+        for child in immediate_children:
+            source_filter = {}
+            source_filter[node['node_property']] = child[key1][node['node_property']]
+            return_node_type = 'source'
+            count_node_type = 'dest'
+            results = self.neo4j_conn.get_nodes_by_relation_and_type(
+                source_label, source_filter, dest_label, dest_filter, 
+                relation, return_node_type, count_node_type)
+            key2 = 'src' if return_node_type == 'source' else 'dest'
+
+            for result in results:
+                compiled_results[result[key2]['title']] = result['node_count'] + 1
         return dict(sorted(compiled_results.items(), key=lambda item: item[1]))
 
     def relation_count(self):
@@ -125,6 +165,33 @@ class Graph:
             relation_dist[k] = {'count':v, 'type':'in'}
         for k,v in out_ls:
             relation_dist[k] = {'count':v, 'type':'out'}
+        return relation_dist
+
+    def get_node_degree_distributions_v1(self, nodeType, node_property=None, node_property_value=None):
+        results_in = self.neo4j_conn.get_node_degree_distribution(nodeType, 'in',
+            node_property, node_property_value)
+        results_out = self.neo4j_conn.get_node_degree_distribution(nodeType, 'out',
+            node_property, node_property_value)
+        relation_dist = {}
+        relation_dist['in'] = []
+        relation_dist['out'] = []
+
+        temp_dict = {}
+        for result in results_in:
+            temp_dict[result['relation']] = result['count']
+
+        in_ls = sorted(temp_dict.items(), key=lambda item: item[1])
+
+        temp_dict = {}
+        for result in results_out:
+            temp_dict[result['relation']] = result['count']
+
+        out_ls = sorted(temp_dict.items(), key=lambda item: item[1])
+
+        for k,v in in_ls:
+            relation_dist['in'].append({'label':k, 'count':v})
+        for k,v in out_ls:
+            relation_dist['out'].append({'label':k, 'count':v})
         return relation_dist
 
     def is_skippable(self, res, exclude_labels, include_labels):
@@ -181,7 +248,68 @@ class Graph:
             })
         return edge_list
 
-    def get_node_neighborhood_graph(self, node):
+    def get_graph_edge_list_v1(self,
+                            include_labels=None):
+        query = ('call apoc.meta.schema() ' + 'YIELD value ' +
+                 'UNWIND keys(value) AS key ' +
+                 'RETURN key, value[key] AS value')
+        results = self.neo4j_conn.run_query_kh(query)
+        relation_dict = {}
+        result_list = json.loads(results)
+        exclude_labels = []
+        
+        for res in result_list:
+            if self.is_skippable(res, exclude_labels, include_labels):
+                continue
+            label_a = res['key']
+            relationships = res['value']['relationships']
+            for relation, properties in relationships.items():
+                direction = properties['direction']
+                labels = properties['labels']
+                for label_b in labels:
+                    if label_b in exclude_labels:
+                        continue
+                    if include_labels and label_b not in include_labels:
+                        continue
+                    if 'out' in direction:
+                        key = (label_a, label_b, relation)
+                        if key not in relation_dict:
+                            source_node = {'node_label': label_a,
+                                           'node_property': 'title', 
+                                           'node_property_value': label_a}
+                            target_node = {'node_label': label_b,
+                                           'node_property': 'title', 
+                                           'node_property_value': label_b}
+                            relation_dict[key] = {
+                                                    'source':source_node,
+                                                    'target':target_node
+                                                }
+                    else:
+                        key = (label_b, label_a, relation)
+                        if key not in relation_dict:
+                            target_node = {'node_label': label_a,
+                                           'node_property': 'title', 
+                                           'node_property_value': label_a}
+                            source_node = {'node_label': label_b,
+                                           'node_property': 'title', 
+                                           'node_property_value': label_b}
+                            relation_dict[key] = {
+                                                    'source':source_node,
+                                                    'target':target_node
+                                                }
+        edge_list = []
+        for key, value in relation_dict.items():
+            source, target, _type = key
+            edge_list.append({
+                "source": value['source'],
+                "target": value['target'],
+                "weight": 1,
+                "label": _type,
+                "emphasis": "yes"
+            })
+        return edge_list
+
+    def get_node_neighborhood_graph_summary(self, node):
         node_label = node['node_label']
         node_property = node['node_property']
         node_property_value = node['node_property_value']
@@ -198,24 +326,36 @@ class Graph:
                  'WITH elements, index ' +
                  'WHERE index %2 = 0 ' +
                  'RETURN elements[index] AS source, ' +
-                 'elements[index+1] AS relation, ' + 
-                 'elements[index+2] AS target')
+                 'type(elements[index+1]) AS relation, ' + 
+                 'elements[index+2] AS target'
+                 )
         result_list = self.neo4j_conn.run_query(query)
-
-        edge_list = []
+        neighborhood_edge_list = []
+        relation_dict = {}
         for res in result_list:
-            # TODO: __DATASET__ node property except as it's "type"
             try:
-                edge_list.append({
-                    "source": res['source'][node_property],
-                    "target": res['target'][node_property],
+                relation_label = res['relation']
+                source_node = {'node_label': res['source']['type'],
+                                'node_property': node_property, 
+                                'node_property_value': res['source'][node_property]}
+                target_node = {'node_label': res['target']['type'],
+                               'node_property': node_property, 
+                               'node_property_value': res['target'][node_property]}
+
+                neighborhood_edge_list.append({
+                    "source": source_node,
+                    "target": target_node,
                     "weight": 1,
-                    "label": res['relation']['type']
+                    "label": relation_label,
+                    "emphasis": "yes"
                 })
             except:
-              print(res)
+                print(res)
             
-        return edge_list
+        relation_dist = self.get_node_degree_distributions_v1(node_label, 
+            node_property, node_property_value)
+
+        return {'schema':neighborhood_edge_list, 'relation_dist': relation_dist}
 
     def get_node_neighborhood_schema(self, node):
         node_label = node['node_label']
@@ -353,7 +493,7 @@ class Graph:
                  'CALL apoc.neighbors.athop(n, "' + relation_param + '", 1) ' +
                  'YIELD node ' +
                  'RETURN node')
-        print(query)
+        #print(query)
         result_list = self.neo4j_conn.run_query(query)
 
         edge_list = []
@@ -469,3 +609,100 @@ class Graph:
             })
 
         return {'schema':edge_list, 'node_dist': node_dist}
+
+    def get_relation_neighborhood_graph_summary(self, node, relation):
+        relationship_name = relation['type']
+        if node is None:
+            edge_list = []
+            
+            node_dict = defaultdict(set)
+            query = ('MATCH (source)-[r:' + relationship_name + ']->(target)'+
+                ' RETURN source,'+
+                ' target')
+            result_list = self.neo4j_conn.run_query(query)
+
+            for res in result_list:
+                source_node = {'node_label': res['source']['type'],
+                                'node_property': 'title', 
+                                'node_property_value': res['source']['title']}
+                target_node = {'node_label': res['target']['type'],
+                               'node_property': 'title', 
+                               'node_property_value': res['target']['title']}
+                weight = 1
+                node_dict[source_node['node_label']].add(source_node['node_property_value'])
+                node_dict[target_node['node_label']].add(target_node['node_property_value'])
+                edge_list.append({
+                    "source": source_node,
+                    "target": target_node,
+                    "weight": weight,
+                    "label": relationship_name,
+                    "emphasis": "yes"
+                })
+            node_dist = {}
+
+            for key, value in node_dict.items():
+                node_dist[key] = len(value)
+
+            return {'schema':edge_list, 'node_dist': node_dist}
+
+        node_label = node['node_label']
+        node_property = node['node_property']
+        node_property_value = node['node_property_value']
+        
+        direction = relation['direction']
+
+        if direction == 'in':
+            relation_param = "<" + relationship_name
+        else:
+            relation_param = relationship_name + ">"
+
+        query = ('MATCH (n:' + node_label + ' {' + node_property + ':"' + 
+                  node_property_value + '"}) ' +
+                 'CALL apoc.neighbors.athop(n, "' + relation_param + '", 1) ' +
+                 'YIELD node ' +
+                 'RETURN node')
+        result_list = self.neo4j_conn.run_query(query)
+
+        edge_list = []
+        relation_dict = {}
+        
+        for res in result_list:
+            if direction == 'in':
+                source_node = {'node_label': res['node']['type'],
+                                'node_property': node_property, 
+                                'node_property_value': res['node'][node_property]}
+                target_node = node
+                
+                source = res['node'][node_property] 
+                target = node_property_value
+                key = (source, target, relationship_name)
+                if key not in relation_dict:
+                    relation_dict[key] = {
+                                            'source':source_node,
+                                            'target':target_node
+                                        }
+            else:
+                source_node = node 
+                target_node = {'node_label': res['node']['type'],
+                                'node_property': node_property, 
+                                'node_property_value': res['node'][node_property]}
+                target = res['node'][node_property] 
+                source = node_property_value
+                key = (source, target, relationship_name)
+                if key not in relation_dict:
+                    relation_dict[key] = {
+                                            'source':source_node,
+                                            'target':target_node
+                                        }
+
+        for key, value in relation_dict.items():
+            source, target, _type = key
+            edge_list.append({
+                "source": value['source'],
+                "target": value['target'],
+                "weight": 1,
+                "label": _type,
+                "emphasis": "yes"
+            })
+
+        return {'schema':edge_list, 'node_dist': {}}
