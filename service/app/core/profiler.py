@@ -44,7 +44,7 @@ class Profiler:
         return distribution_list
 
     def get_kh_edge_list(self):
-        return self.graph.get_graph_edge_list()
+        return self.graph.get_graph_edge_list_v1()
 
     def get_node_neighborhood(self, node):
         return self.graph.get_node_neighborhood_graph_summary(node)

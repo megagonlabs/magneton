@@ -248,6 +248,67 @@ class Graph:
             })
         return edge_list
 
+    def get_graph_edge_list_v1(self,
+                            include_labels=None):
+        query = ('call apoc.meta.schema() ' + 'YIELD value ' +
+                 'UNWIND keys(value) AS key ' +
+                 'RETURN key, value[key] AS value')
+        results = self.neo4j_conn.run_query_kh(query)
+        relation_dict = {}
+        result_list = json.loads(results)
+        exclude_labels = []
+        
+        for res in result_list:
+            if self.is_skippable(res, exclude_labels, include_labels):
+                continue
+            label_a = res['key']
+            relationships = res['value']['relationships']
+            for relation, properties in relationships.items():
+                direction = properties['direction']
+                labels = properties['labels']
+                for label_b in labels:
+                    if label_b in exclude_labels:
+                        continue
+                    if include_labels and label_b not in include_labels:
+                        continue
+                    if 'out' in direction:
+                        key = (label_a, label_b, relation)
+                        if key not in relation_dict:
+                            source_node = {'node_label': label_a,
+                                           'node_property': 'title', 
+                                           'node_property_value': label_a}
+                            target_node = {'node_label': label_b,
+                                           'node_property': 'title', 
+                                           'node_property_value': label_b}
+                            relation_dict[key] = {
+                                                    'source':source_node,
+                                                    'target':target_node
+                                                }
+                    else:
+                        key = (label_b, label_a, relation)
+                        if key not in relation_dict:
+                            target_node = {'node_label': label_a,
+                                           'node_property': 'title', 
+                                           'node_property_value': label_a}
+                            source_node = {'node_label': label_b,
+                                           'node_property': 'title', 
+                                           'node_property_value': label_b}
+                            relation_dict[key] = {
+                                                    'source':source_node,
+                                                    'target':target_node
+                                                }
+        edge_list = []
+        for key, value in relation_dict.items():
+            source, target, _type = key
+            edge_list.append({
+                "source": value['source'],
+                "target": value['target'],
+                "weight": 1,
+                "label": _type,
+                "emphasis": "yes"
+            })
+        return edge_list
+
     def get_node_neighborhood_graph_summary(self, node):
         node_label = node['node_label']
         node_property = node['node_property']
@@ -265,26 +326,25 @@ class Graph:
                  'WITH elements, index ' +
                  'WHERE index %2 = 0 ' +
                  'RETURN elements[index] AS source, ' +
-                 'labels(elements[index]) AS source_labels, ' + 
                  'type(elements[index+1]) AS relation, ' + 
-                 'elements[index+2] AS target,' +
-                 'labels(elements[index+2]) AS target_labels'
+                 'elements[index+2] AS target'
                  )
         result_list = self.neo4j_conn.run_query(query)
-
         neighborhood_edge_list = []
         relation_dict = {}
         for res in result_list:
             try:
-                source_labels = res['source_labels']
-                source_name = res['source'][node_property]
-                target_labels = res['target_labels']
-                target_name = res['target'][node_property]
                 relation_label = res['relation']
+                source_node = {'node_label': res['source']['type'],
+                                'node_property': node_property, 
+                                'node_property_value': res['source'][node_property]}
+                target_node = {'node_label': res['target']['type'],
+                               'node_property': node_property, 
+                               'node_property_value': res['target'][node_property]}
 
                 neighborhood_edge_list.append({
-                    "source": source_name,
-                    "target": target_name,
+                    "source": source_node,
+                    "target": target_node,
                     "weight": 1,
                     "label": relation_label,
                     "emphasis": "yes"
@@ -556,26 +616,28 @@ class Graph:
             edge_list = []
             
             node_dict = defaultdict(set)
-            query = ('MATCH (a)-[r:' + relationship_name + ']->(b)'+
-                ' RETURN a.title as node_a, labels(a) as labels_a,'+
-                ' b.title as node_b, labels(b) as labels_b')
+            query = ('MATCH (source)-[r:' + relationship_name + ']->(target)'+
+                ' RETURN source,'+
+                ' target')
             result_list = self.neo4j_conn.run_query(query)
 
             for res in result_list:
-                labels_a = res['labels_a']
-                labels_b = res['labels_b']
+                source_node = {'node_label': res['source']['type'],
+                                'node_property': 'title', 
+                                'node_property_value': res['source']['title']}
+                target_node = {'node_label': res['target']['type'],
+                               'node_property': 'title', 
+                               'node_property_value': res['target']['title']}
                 weight = 1
-                for label_a in labels_a:
-                    node_dict[label_a].add(res['node_a'])
-                    for label_b in labels_b:
-                        node_dict[label_b].add(res['node_b'])
-                        edge_list.append({
-                            "source": label_a,
-                            "target": label_b,
-                            "weight": weight,
-                            "label": relationship_name,
-                            "emphasis": "yes"
-                        })
+                node_dict[source_node['node_label']].add(source_node['node_property_value'])
+                node_dict[target_node['node_label']].add(target_node['node_property_value'])
+                edge_list.append({
+                    "source": source_node,
+                    "target": target_node,
+                    "weight": weight,
+                    "label": relationship_name,
+                    "emphasis": "yes"
+                })
             node_dist = {}
 
             for key, value in node_dict.items():
@@ -598,7 +660,7 @@ class Graph:
                   node_property_value + '"}) ' +
                  'CALL apoc.neighbors.athop(n, "' + relation_param + '", 1) ' +
                  'YIELD node ' +
-                 'RETURN node, labels(node) as node_labels')
+                 'RETURN node')
         result_list = self.neo4j_conn.run_query(query)
 
         edge_list = []
@@ -606,27 +668,39 @@ class Graph:
         
         for res in result_list:
             if direction == 'in':
-                for label in res['node_labels']:
-                    source = res['node'][node_property] 
-                    target = node_property_value
-                    key = (source, target, relationship_name)
-                    if key not in relation_dict:
-                        relation_dict[key] = 1
+                source_node = {'node_label': res['node']['type'],
+                                'node_property': node_property, 
+                                'node_property_value': res['node'][node_property]}
+                target_node = node
+                
+                source = res['node'][node_property] 
+                target = node_property_value
+                key = (source, target, relationship_name)
+                if key not in relation_dict:
+                    relation_dict[key] = {
+                                            'source':source_node,
+                                            'target':target_node
+                                        }
             else:
-                for label in res['node_labels']:
-                    source = node_property_value 
-                    target = res['node'][node_property] 
-                    key = (source, target, relationship_name)
-                    if key not in relation_dict:
-                        relation_dict[key] = 1
+                source_node = node 
+                target_node = {'node_label': res['node']['type'],
+                                'node_property': node_property, 
+                                'node_property_value': res['node'][node_property]}
+                target = res['node'][node_property] 
+                source = node_property_value
+                key = (source, target, relationship_name)
+                if key not in relation_dict:
+                    relation_dict[key] = {
+                                            'source':source_node,
+                                            'target':target_node
+                                        }
 
         for key, value in relation_dict.items():
             source, target, _type = key
-            weight = value
             edge_list.append({
-                "source": source,
-                "target": target,
-                "weight": value,
+                "source": value['source'],
+                "target": value['target'],
+                "weight": 1,
                 "label": _type,
                 "emphasis": "yes"
             })
