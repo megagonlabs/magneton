@@ -1,13 +1,21 @@
 import React from "react";
 import { Pane } from "../components/panes/pane";
 import { useWidgetModel } from "../core/widget";
-import { SchemaGraph } from "../components/schema-graph";
 import AsyncBarChart from "../components/charts/async-bar-chart";
 import * as d3 from "d3";
 import { LoadingOverlay } from "../components/loading-overlay";
+import { Schema, SchemaGraph } from "../components/schema-graph";
 
 export const Explorer = () => {
-  const model = useWidgetModel();
+  const model = useWidgetModel<{
+    status: any;
+    actions: any;
+    data: {
+      schema: Schema;
+      children: any;
+      relations: any;
+    };
+  }>();
 
   return (
     <Pane initialHeight={800}>
@@ -16,14 +24,7 @@ export const Explorer = () => {
           loading={model.status.schema?.loading}
           error={model.status.schema?.error}
         >
-          {model.data.schema && (
-            <SchemaGraph
-              data={model.data.schema}
-              onTap={async (e) => {
-                model.actions.filter_by_type(e.target.data("id") ?? null);
-              }}
-            />
-          )}
+          {model.data.schema && <SchemaGraph schema={model.data.schema} />}
         </LoadingOverlay>
       </Pane>
       <Pane direction="column">

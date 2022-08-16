@@ -1169,6 +1169,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/object-hash@npm:^2.2.1":
+  version: 2.2.1
+  resolution: "@types/object-hash@npm:2.2.1"
+  checksum: bbcbf076903e11fa6d61dd5cc365bce2b080b18502ef52672a427443262e465d7b46b8f2821e8cea0307de66aee2eb92ad6e2bed2346acd7c8de118d4123fe3a
+  languageName: node
+  linkType: hard
+
 "@types/parse-json@npm:^4.0.0":
   version: 4.0.0
   resolution: "@types/parse-json@npm:4.0.0"
@@ -1556,6 +1563,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"avsdf-base@npm:^1.0.0":
+  version: 1.0.0
+  resolution: "avsdf-base@npm:1.0.0"
+  dependencies:
+    layout-base: ^1.0.0
+  checksum: ab610add3ca3eff34af26e2144b0797c8de704ad47e2afa7daa9cedcb80100278a25dfad00465de0027dab1ae4926049f878a7437531d43c348e825dcaa95144
+  languageName: node
+  linkType: hard
+
 "babel-plugin-macros@npm:^2.6.1":
   version: 2.8.0
   resolution: "babel-plugin-macros@npm:2.8.0"
@@ -1828,6 +1844,17 @@ __metadata:
   version: 3.1.0
   resolution: "csstype@npm:3.1.0"
   checksum: 644e986cefab86525f0b674a06889cfdbb1f117e5b7d1ce0fc55b0423ecc58807a1ea42ecc75c4f18999d14fc42d1d255f84662a45003a52bb5840e977eb2ffd
+  languageName: node
+  linkType: hard
+
+"cytoscape-avsdf@npm:^1.0.0":
+  version: 1.0.0
+  resolution: "cytoscape-avsdf@npm:1.0.0"
+  dependencies:
+    avsdf-base: ^1.0.0
+  peerDependencies:
+    cytoscape: ^3.2.0
+  checksum: 3ed573f5248652e6f10caedab6324e5c4293d16f4446fd362ece6902947858d6b821bbbcdeab7249d3299fbd3bf38f632d645afc5259eaec9491933e82d86dcd
   languageName: node
   linkType: hard
 
@@ -3110,6 +3137,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"layout-base@npm:^1.0.0":
+  version: 1.0.2
+  resolution: "layout-base@npm:1.0.2"
+  checksum: e4c312765ac4fa13b49c940e701461309c7a0aa07f784f81d31f626b945dced90a8abf83222388a5af16b7074271f745501a90ef5a3af676abb2e7eb16d55b2e
+  languageName: node
+  linkType: hard
+
 "lines-and-columns@npm:^1.1.6":
   version: 1.2.4
   resolution: "lines-and-columns@npm:1.2.4"
@@ -3265,6 +3299,13 @@ __metadata:
   version: 4.1.1
   resolution: "object-assign@npm:4.1.1"
   checksum: fcc6e4ea8c7fe48abfbb552578b1c53e0d194086e2e6bbbf59e0a536381a292f39943c6e9628af05b5528aa5e3318bb30d6b2e53cadaf5b8fe9e12c4b69af23f
+  languageName: node
+  linkType: hard
+
+"object-hash@npm:^3.0.0":
+  version: 3.0.0
+  resolution: "object-hash@npm:3.0.0"
+  checksum: 80b4904bb3857c52cc1bfd0b52c0352532ca12ed3b8a6ff06a90cd209dfda1b95cee059a7625eb9da29537027f68ac4619363491eedb2f5d3dddbba97494fd6c
   languageName: node
   linkType: hard
 
@@ -3669,6 +3710,7 @@ __metadata:
     "@types/deep-equal": ^1.0.1
     "@types/events": ^3.0.0
     "@types/node": ^18.6.1
+    "@types/object-hash": ^2.2.1
     "@types/react": ^18.0.15
     "@types/react-cytoscapejs": ^1.2.2
     "@types/react-dom": ^18.0.6
@@ -3676,9 +3718,11 @@ __metadata:
     "@types/uuid": ^8.3.4
     add: ^2.0.6
     cytoscape: ^3.22.1
+    cytoscape-avsdf: ^1.0.0
     d3: ^7.6.1
     deep-equal: ^2.0.5
     events: ^3.3.0
+    object-hash: ^3.0.0
     react: ^18.2.0
     react-cytoscapejs: ^1.2.1
     react-dom: ^18.2.0

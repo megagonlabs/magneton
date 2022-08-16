@@ -35,7 +35,9 @@ class Explorer:
         await self.__widget.flush()
 
         model.state.nodetype = nodetype
-        model.data.children = service.get_children_node_distributions(nodetype)
+        model.data.children = service.get_children_node_distributions(
+            nodetype, "title", nodetype
+        )
         if nodetype:
             model.data.relations = service.get_node_degree_distributions(nodetype)
         else:
