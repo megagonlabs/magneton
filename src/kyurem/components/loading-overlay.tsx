@@ -11,7 +11,7 @@ export const LoadingOverlay = ({
   sx,
   style,
 }: PropsWithChildren<{
-  loading: boolean;
+  loading?: boolean;
   error?: any;
   sx?: SystemCssProperties;
   style?: CSSProperties;

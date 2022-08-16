@@ -1,21 +1,24 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Pane } from "../components/panes/pane";
 import { useWidgetModel } from "../core/widget";
-import AsyncBarChart from "../components/charts/async-bar-chart";
 import * as d3 from "d3";
 import { LoadingOverlay } from "../components/loading-overlay";
-import { Schema, SchemaGraph } from "../components/schema-graph";
+import {
+  makeNodeColorScale,
+  Schema,
+  SchemaGraph,
+} from "../components/schema-graph";
+import { useObject } from "../lib/use-object";
+import { horizontalBarChart, VegaHelper } from "../components/vega-helper";
 
 export const Explorer = () => {
-  const model = useWidgetModel<{
-    status: any;
-    actions: any;
-    data: {
-      schema: Schema;
-      children: any;
-      relations: any;
-    };
-  }>();
+  const model = useWidgetModel<Model>();
+
+  const baseSchema = useObject(model.data.base_schema);
+  const nodeColorScale = useMemo(
+    () => makeNodeColorScale(baseSchema),
+    [baseSchema]
+  );
 
   return (
     <Pane initialHeight={800}>
@@ -24,46 +27,116 @@ export const Explorer = () => {
           loading={model.status.schema?.loading}
           error={model.status.schema?.error}
         >
-          {model.data.schema && <SchemaGraph schema={model.data.schema} />}
+          {baseSchema && (
+            <SchemaGraph
+              baseSchema={baseSchema}
+              nodeColorScale={nodeColorScale}
+              schema={model.data.schema}
+              selection={model.state.selection}
+              onSelect={(node) => {
+                if (!node) {
+                  model.state.selection = null;
+                  model.actions.filter_by_label(null);
+                }
+                if (node?.isNode()) {
+                  model.state.selection = node.id();
+                  model.actions.filter_by_label(node.data("label"));
+                }
+              }}
+            />
+          )}
         </LoadingOverlay>
       </Pane>
       <Pane direction="column">
         <Pane>
-          <AsyncBarChart
-            state={{
+          <VegaHelper
+            spec={horizontalBarChart({
+              bar: {
+                fill: model.state.nodelabel
+                  ? nodeColorScale(model.state.nodelabel)
+                  : undefined,
+              },
+            })}
+            data={{
               loading: model.status.children?.loading,
               error: model.status.children?.error,
               value: model.data.children,
             }}
-            horizontal
-            onClick={async (e, d) => {
-              model.actions.filter_by_title(d.x);
+            signals={{
+              select: { on: [{ events: "rect:click", update: "datum" }] },
+            }}
+            signalListeners={{
+              select(_, datum: ChildDatum) {
+                model.actions.filter_by_title(datum.x);
+              },
             }}
           />
         </Pane>
         <Pane>
-          <AsyncBarChart
-            state={{
+          <VegaHelper
+            spec={[
+              { encoding: { color: { field: "type", type: "nominal" } } },
+              horizontalBarChart({
+                categories: { field: "label", sort: { field: "type" } },
+              }),
+            ]}
+            data={{
               loading: model.status.relations?.loading,
               error: model.status.relations?.error,
-              value: model.data.relations
-                ?.sort((a: any, b: any) => a.y - b.y)
-                .sort((a: any, b: any) =>
-                  (a.type ?? "").localeCompare(b.type ?? "")
-                ),
+              value: model.data.relations?.map((r) => ({
+                ...r,
+                direction: r.type,
+                type: "in/out",
+                label: `${r.x}${r.type ? ` (${r.type})` : ""}`,
+              })),
             }}
-            color={(d: any) =>
-              d3["schemeCategory10"][
-                d.type === "in" ? 0 : d.type === "out" ? 1 : 2
-              ]
-            }
-            horizontal
-            onClick={async (e, d) => {
-              model.actions.filter_by_relation(d.x, d.type);
+            signals={{
+              select: { on: [{ events: "rect:click", update: "datum" }] },
+            }}
+            signalListeners={{
+              select(_, datum) {
+                model.actions.filter_by_relation(datum.x, datum.direction);
+              },
             }}
           />
         </Pane>
       </Pane>
     </Pane>
   );
+};
+
+/////////////
+/// TYPES ///
+/////////////
+
+type Model = {
+  status: {
+    [K in "schema" | "children" | "relations"]?: {
+      loading?: boolean;
+      error?: any;
+    };
+  };
+  actions: {
+    filter_by_label(label?: string | null): Promise<void>;
+    filter_by_title(title?: string): Promise<void>;
+    filter_by_relation(label?: string, direction?: string): Promise<void>;
+  };
+  data: {
+    base_schema: Schema;
+    schema?: Schema;
+    children?: ChildDatum[];
+    relations?: RelationDatum[];
+  };
+  state: { selection?: string | null; nodelabel?: string };
+};
+
+type RelationDatum = {
+  type?: string;
+  x: string;
+  y: number;
+};
+
+type ChildDatum = {
+  x: string;
+  y: number;
 };

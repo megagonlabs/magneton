@@ -5,41 +5,51 @@ class Explorer:
     def __init__(self, service, model=None):
         if model == None:
             model = WidgetModel.dotdict()
-        self.model = model
 
-        # Transient/temporaty status, e.g., loading status
-        self.model.status = {}
+            # Transient/temporaty status, e.g., loading status
+            model.status = {}
 
-        # State/parameters of widget
-        self.model.state = {}
+            # State/parameters of widget
+            model.state = {}
+            model.state.nodelabel = None
+            model.state.nodetitle = None
 
-        # Data in widget
-        self.model.data = {}
+            # Data in widget
+            model.data = {}
 
-        # Actions callable from widget
-        self.model.actions = {}
-        self.model.actions.filter_by_type = self.filter_by_type
-        self.model.actions.filter_by_title = self.filter_by_title
-        self.model.actions.filter_by_relation = self.filter_by_relation
+            # Actions callable from widget
+            model.actions = {}
+            model.actions.filter_by_label = self.filter_by_label
+            model.actions.filter_by_title = self.filter_by_title
+            model.actions.filter_by_relation = self.filter_by_relation
+
+            # Initialize view
+            model.data.children = service.get_children_node_distributions()
+            model.data.relations = service.get_relation_distribution()
 
         # Internal
         self.__service = service
-        self.__widget = WidgetBase("Explorer", model=self.model)
+        self.__widget = WidgetBase("Explorer", model=model)
 
-    async def filter_by_type(self, nodetype):
+        self.model = model
+
+    async def filter_by_label(self, nodelabel):
         service = self.__service
         model = self.model
+
+        model.data.schema = None
+        model.state.nodelabel = nodelabel
+        model.state.nodetitle = None
 
         model.status.children = {"loading": True}
         model.status.relations = {"loading": True}
         await self.__widget.flush()
 
-        model.state.nodetype = nodetype
         model.data.children = service.get_children_node_distributions(
-            nodetype, "title", nodetype
+            nodelabel, "title", nodelabel
         )
-        if nodetype:
-            model.data.relations = service.get_node_degree_distributions(nodetype)
+        if nodelabel:
+            model.data.relations = service.get_node_degree_distributions(nodelabel)
         else:
             model.data.relations = service.get_relation_distribution()
 
@@ -50,15 +60,16 @@ class Explorer:
         service = self.__service
         model = self.model
 
+        model.state.nodetitle = nodetitle
+
         model.status.schema = {"loading": True}
         model.status.relations = {"loading": True}
         await self.__widget.flush()
 
-        model.state.nodetype = nodetitle
         result = service.get_node_neighborhood(
             {
-                "node_label": model.state.nodetype
-                if model.state.nodetype
+                "node_label": model.state.nodelabel
+                if model.state.nodelabel
                 else nodetitle,
                 "node_property": "title",
                 "node_property_value": nodetitle,
@@ -66,8 +77,9 @@ class Explorer:
         )
         model.data.schema = result["schema"]
         model.data.relations = [
-            {"x": key, "y": attr["count"], "type": attr["type"]}
-            for key, attr in result["relation_dist"]
+            {"x": relation["label"], "y": relation["count"], "type": type}
+            for type, relations in result["relation_dist"].items()
+            for relation in relations
         ]
 
         model.status.schema = {}
@@ -81,11 +93,24 @@ class Explorer:
         model.status.children = {"loading": True}
         await self.__widget.flush()
 
+        if model.state.nodelabel and model.state.nodetitle:
+            node = {
+                "node_label": model.state.nodelabel,
+                "node_property": "title",
+                "node_property_value": model.state.nodetitle,
+            }
+        else:
+            node = None
+
         result = service.get_relation_neighborhood(
-            None, {"type": type, "direction": direction}
+            node, {"type": type, "direction": direction}
         )
+
         model.data.schema = result["schema"]
-        model.data.children = [{"x": x, "y": y} for x, y in result["node_dist"].items()]
+        if not node:
+            model.data.children = [
+                {"x": x, "y": y} for x, y in result["node_dist"].items()
+            ]
 
         model.status.schema = {}
         model.status.children = {}
