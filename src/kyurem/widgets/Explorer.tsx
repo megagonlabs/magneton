@@ -8,7 +8,7 @@ import {
   SchemaGraph,
 } from "../components/schema-graph";
 import { useObject } from "../lib/use-object";
-import { horizontalBarChart, VegaHelper } from "../components/vega-helper";
+import { horizontalBarChart, strokeHighlight } from "../components/vega-mixins";
 import { LongBarChart } from "../components/long-bar-chart";
 
 export const Explorer = () => {
@@ -59,21 +59,12 @@ export const Explorer = () => {
                       ? nodeColorScale(model.state.nodelabel)
                       : undefined,
                   },
-                  encoding: {
-                    stroke: { value: "red" },
-                    strokeWidth: {
-                      condition: [
-                        {
-                          value: 3,
-                          test: {
-                            field: "x",
-                            equal: model.state.nodetitle ?? false,
-                          },
-                        },
-                      ],
-                      value: 0,
+                  ...strokeHighlight({
+                    test: {
+                      field: "x",
+                      equal: model.state.nodetitle ?? false,
                     },
-                  },
+                  }),
                 },
               }),
             ]}
@@ -107,6 +98,12 @@ export const Explorer = () => {
               },
               horizontalBarChart({
                 categories: { field: "label", sort: { field: "type" } },
+                bar: strokeHighlight({
+                  test: {
+                    field: "x",
+                    equal: model.state.relation?.type ?? "",
+                  },
+                }),
               }),
             ]}
             data={{
@@ -158,7 +155,12 @@ type Model = {
     children?: ChildDatum[];
     relations?: RelationDatum[];
   };
-  state: { selection?: string | null; nodelabel?: string; nodetitle?: string };
+  state: {
+    selection?: string | null;
+    nodelabel?: string;
+    nodetitle?: string;
+    relation?: { type: string; direction?: string };
+  };
 };
 
 type RelationDatum = {

@@ -89,6 +89,7 @@ class Explorer:
         service = self.__service
         model = self.model
 
+        model.state.relation={ 'type': type, 'direction': direction }
         model.status.schema = {"loading": True}
         model.status.children = {"loading": True}
         await self.__widget.flush()
