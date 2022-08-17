@@ -24,6 +24,10 @@ class Observable:
 
 
 class WidgetModel(ABC):
+    @staticmethod
+    def dotdict(): 
+        return DotDictProxy()
+
     _is_widget_model = None
 
     @staticmethod

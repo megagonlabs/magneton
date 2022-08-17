@@ -1,10 +1,10 @@
-import React, { ComponentProps } from "react";
-import { Spec } from "vega";
+import React, { ComponentProps, useMemo } from "react";
+import { Signal, Spec } from "vega";
 import { VegaLite, VisualizationSpec } from "react-vega";
-import { AsyncState } from "react-use/lib/useAsyncFn";
 import { LoadingOverlay } from "./loading-overlay";
 import { usePaneSize } from "./panes/pane-context";
-import { AnyMark, BarConfig } from "vega-lite/build/src/mark";
+import { MarkDef } from "vega-lite/build/src/mark";
+import { PositionFieldDef } from "vega-lite/build/src/channeldef";
 
 ////////////////////
 // MAIN COMPONENT //
@@ -17,9 +17,9 @@ export const VegaHelper = <Datum,>({
   ComponentProps<typeof VegaLite>,
   "patch" | "data" | "signalListeners" | "spec"
 > & {
-  spec: Partial<VisualizationSpec>;
-  data: Datum[] | AsyncState<Datum[]>;
-  signals?: Spec["signals"];
+  spec: Partial<VisualizationSpec> | Partial<VisualizationSpec>[];
+  data: Datum[] | { loading?: boolean; error?: any; value?: Datum[] };
+  signals?: { [name: string]: Partial<Signal> };
   signalListeners?: { [K in string]: (name: K, value: Datum) => void };
 }) =>
   Array.isArray(data) ? (
@@ -33,21 +33,26 @@ export const VegaHelper = <Datum,>({
 const Component = ({
   data,
   spec,
-  signals = [],
+  signals = {},
   ...props
 }: Omit<
   ComponentProps<typeof VegaLite>,
   "data" | "spec" | "signalListeners"
 > & {
-  spec: Partial<VisualizationSpec>;
+  spec: Partial<VisualizationSpec> | Partial<VisualizationSpec>[];
   data: any[];
-  signals?: Spec["signals"];
+  signals?: { [name: string]: Partial<Signal> };
   signalListeners?: {
     [signalName: string]: (name: string, value: any) => void;
   };
 }) => {
   const { width, height } = usePaneSize() ?? {};
   if (width === 0 || height === 0) return <></>;
+
+  const spec2 = useMemo(
+    () => (Array.isArray(spec) ? mergeSpec(...spec) : spec),
+    [spec]
+  );
 
   return (
     <VegaLite
@@ -57,12 +62,18 @@ const Component = ({
         autosize: { type: "fit", contains: "padding" },
         data: { name: "data" },
 
-        ...spec,
+        ...spec2,
       }}
       data={{ data }}
       patch={(spec) => ({
         ...spec,
-        signals: [...(spec.signals ?? []), ...signals],
+        signals: [
+          ...(spec.signals ?? []),
+          ...Object.entries(signals).map(([name, signal]) => ({
+            name,
+            ...signal,
+          })),
+        ],
       })}
       {...(props as any)}
     />
@@ -73,7 +84,7 @@ const Component = ({
 // MIXIN SPECS //
 /////////////////
 
-export const mergeSpec = (...specs: Partial<VisualizationSpec>[]) => {
+export const mergeSpec = <T extends object>(...specs: T[]): T => {
   const isObjectLiteral = (x: unknown): x is object => {
     if (!x || typeof x !== "object") return false;
     const p = Reflect.getPrototypeOf(x);
@@ -103,38 +114,47 @@ export const mergeSpec = (...specs: Partial<VisualizationSpec>[]) => {
 };
 
 export const horizontalBarChart = ({
-  fields,
-  marks: { bar = (x) => x, label = (x) => x } = {},
+  categories,
+  values,
+  bar,
+  label,
 }: {
-  fields: { category: string; value: string };
-  marks?: {
-    bar?(markSpec: AnyMark): AnyMark;
-    label?(markSpec: AnyMark): AnyMark;
-  };
-}) =>
+  categories?: PositionFieldDef<any>;
+  values?: PositionFieldDef<any>;
+  bar?: Partial<MarkDef<"bar">>;
+  label?: Partial<MarkDef<"text">>;
+} = {}) =>
   ({
     encoding: {
       y: {
-        field: fields.category,
+        field: "x",
         type: "nominal",
         axis: null,
+        ...categories,
       },
     },
     layer: [
       {
-        mark: bar({ type: "bar", color: "#ddd" }),
+        mark: { type: "bar", ...bar },
         encoding: {
           x: {
-            field: fields.value,
+            field: "y",
             type: "quantitative",
             title: "",
+            ...values,
           },
         },
       },
       {
-        mark: label({ type: "text", align: "left", x: 5 }),
+        mark: {
+          type: "text",
+          align: "left",
+          x: 5,
+          fill: "black",
+          ...label,
+        },
         encoding: {
-          text: { field: fields.category },
+          text: { field: categories?.field ?? "x" },
           detail: { aggregate: "count" },
         },
       },

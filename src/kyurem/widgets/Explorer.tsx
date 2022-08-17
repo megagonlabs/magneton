@@ -1,111 +1,47 @@
-import React, { useEffect, useState } from "react";
+import React, { useMemo } from "react";
 import { Pane } from "../components/panes/pane";
 import { useWidgetModel } from "../core/widget";
-import { SchemaGraph } from "../components/schema-graph";
-import AsyncBarChart from "../components/charts/async-bar-chart";
 import * as d3 from "d3";
 import { LoadingOverlay } from "../components/loading-overlay";
-
-type AsyncState = { loading?: boolean; error?: any };
+import {
+  makeNodeColorScale,
+  Schema,
+  SchemaGraph,
+} from "../components/schema-graph";
+import { useObject } from "../lib/use-object";
+import { horizontalBarChart, VegaHelper } from "../components/vega-helper";
 
 export const Explorer = () => {
-  const model = useWidgetModel();
-  const [schemaState, setSchemaState] = useState<AsyncState>({});
-  const [childrenState, setChildrenState] = useState<AsyncState>({});
-  const [relationState, setRelationState] = useState<AsyncState>({});
+  const model = useWidgetModel<Model>();
 
-  useEffect(() => {
-    (async () => {
-      setChildrenState({ loading: true });
-      setRelationState({ loading: true });
-      try {
-        const [children_dist, relation_dist] = await Promise.all([
-          model.children_distribution(model.selected_label),
-          model.relation_distribution(model.selected_label),
-        ]);
-
-        model.children_dist = children_dist;
-        model.relation_dist = relation_dist;
-
-        setChildrenState({ loading: false });
-        setRelationState({ loading: false });
-      } catch (e) {
-        setChildrenState({ error: e });
-        setRelationState({ error: e });
-      }
-    })();
-  }, [model.selected_label]);
-
-  useEffect(() => {
-    (async () => {
-      if (!model.selected_title) return;
-
-      setSchemaState({ loading: true });
-      setRelationState({ loading: true });
-      try {
-        const { relation_dist, schema } = await model.node_neighborhood_schema({
-          node_label: !model.selected_label ? model.selected_title : model.selected_label,
-          node_property: "title",
-          node_property_value: model.selected_title,
-        });
-
-        model.schema = schema;
-        model.relation_dist = Object.entries(relation_dist).map(
-          ([key, { count, type }]: any) => ({ x: key, y: count, type })
-        );
-
-        setSchemaState({ loading: false });
-        setRelationState({ loading: false });
-      } catch (e) {
-        setSchemaState({ error: e });
-        setRelationState({ error: e });
-      }
-    })();
-  }, [model.selected_title]);
-
-  useEffect(() => {
-    (async () => {
-      if (!model.selected_relation) return;
-
-      setSchemaState({ loading: true });
-      setChildrenState({ loading: true });
-      try {
-        const { node_dist, schema } = await model.relation_neighborhood_schema(
-          null,
-          {
-            type: model.selected_relation.type,
-            direction: model.selected_relation.direction,
-          }
-        );
-
-        model.schema = schema;
-        model.children_dist = Object.entries(node_dist).map(([x, y]: any) => ({
-          x,
-          y,
-        }));
-
-        setSchemaState({ loading: false });
-        setChildrenState({ loading: false });
-      } catch (e) {
-        setSchemaState({ error: e });
-        setChildrenState({ error: e });
-      }
-    })();
-  }, [model.selected_relation?.type, model.selected_relation?.direction]);
+  const baseSchema = useObject(model.data.base_schema);
+  const nodeColorScale = useMemo(
+    () => makeNodeColorScale(baseSchema),
+    [baseSchema]
+  );
 
   return (
     <Pane initialHeight={800}>
       <Pane>
         <LoadingOverlay
-          loading={!!schemaState.loading}
-          error={schemaState.error}
+          loading={model.status.schema?.loading}
+          error={model.status.schema?.error}
         >
-          {model.schema && (
+          {baseSchema && (
             <SchemaGraph
-              data={model.schema}
-              onTap={async (e) => {
-                model.selected_label = e.target.data("id") ?? null;
-                model.selected_title = "";
+              baseSchema={baseSchema}
+              nodeColorScale={nodeColorScale}
+              schema={model.data.schema}
+              selection={model.state.selection}
+              onSelect={(node) => {
+                if (!node) {
+                  model.state.selection = null;
+                  model.actions.filter_by_label(null);
+                }
+                if (node?.isNode()) {
+                  model.state.selection = node.id();
+                  model.actions.filter_by_label(node.data("label"));
+                }
               }}
             />
           )}
@@ -113,41 +49,94 @@ export const Explorer = () => {
       </Pane>
       <Pane direction="column">
         <Pane>
-          <AsyncBarChart
-            state={{
-              loading: !!childrenState.loading,
-              error: childrenState.error,
-              value: model.children_dist,
+          <VegaHelper
+            spec={horizontalBarChart({
+              bar: {
+                fill: model.state.nodelabel
+                  ? nodeColorScale(model.state.nodelabel)
+                  : undefined,
+              },
+            })}
+            data={{
+              loading: model.status.children?.loading,
+              error: model.status.children?.error,
+              value: model.data.children,
             }}
-            horizontal
-            onClick={async (e, d) => {
-              model.selected_title = d.x;
+            signals={{
+              select: { on: [{ events: "rect:click", update: "datum" }] },
+            }}
+            signalListeners={{
+              select(_, datum: ChildDatum) {
+                model.actions.filter_by_title(datum.x);
+              },
             }}
           />
         </Pane>
         <Pane>
-          <AsyncBarChart
-            state={{
-              loading: !!relationState.loading,
-              error: relationState.error,
-              value: model.relation_dist
-                ?.sort((a: any, b: any) => a.y - b.y)
-                .sort((a: any, b: any) =>
-                  (a.type ?? "").localeCompare(b.type ?? "")
-                ),
+          <VegaHelper
+            spec={[
+              { encoding: { color: { field: "type", type: "nominal" } } },
+              horizontalBarChart({
+                categories: { field: "label", sort: { field: "type" } },
+              }),
+            ]}
+            data={{
+              loading: model.status.relations?.loading,
+              error: model.status.relations?.error,
+              value: model.data.relations?.map((r) => ({
+                ...r,
+                direction: r.type,
+                type: "in/out",
+                label: `${r.x}${r.type ? ` (${r.type})` : ""}`,
+              })),
             }}
-            color={(d: any) =>
-              d3["schemeCategory10"][
-                d.type === "in" ? 0 : d.type === "out" ? 1 : 2
-              ]
-            }
-            horizontal
-            onClick={async (e, d) => {
-              model.selected_relation = { type: d.x, direction: d.type };
+            signals={{
+              select: { on: [{ events: "rect:click", update: "datum" }] },
+            }}
+            signalListeners={{
+              select(_, datum) {
+                model.actions.filter_by_relation(datum.x, datum.direction);
+              },
             }}
           />
         </Pane>
       </Pane>
     </Pane>
   );
+};
+
+/////////////
+/// TYPES ///
+/////////////
+
+type Model = {
+  status: {
+    [K in "schema" | "children" | "relations"]?: {
+      loading?: boolean;
+      error?: any;
+    };
+  };
+  actions: {
+    filter_by_label(label?: string | null): Promise<void>;
+    filter_by_title(title?: string): Promise<void>;
+    filter_by_relation(label?: string, direction?: string): Promise<void>;
+  };
+  data: {
+    base_schema: Schema;
+    schema?: Schema;
+    children?: ChildDatum[];
+    relations?: RelationDatum[];
+  };
+  state: { selection?: string | null; nodelabel?: string };
+};
+
+type RelationDatum = {
+  type?: string;
+  x: string;
+  y: number;
+};
+
+type ChildDatum = {
+  x: string;
+  y: number;
 };

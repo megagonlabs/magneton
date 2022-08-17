@@ -10,14 +10,14 @@ const AsyncBarChart = <D extends CategoricalDatum>({
   horizontal,
   onClick,
 }: {
-  state: { loading: boolean; error?: any; value?: D[] };
+  state: { loading?: boolean; error?: any; value?: D[] };
   color?: AttributeValue<D>;
   horizontal?: boolean;
   onClick?: (event: MouseEvent, data: D) => void;
 }) => {
   const { loading, error, value: data = [] } = state;
   return (
-    <LoadingOverlay loading={!!loading} error={error}>
+    <LoadingOverlay loading={loading} error={error}>
       <BarChart
         data={data}
         horizontal={horizontal}

@@ -37,3 +37,9 @@ export const useWidgetModel = <M extends Record<string, any> = any>() => {
 
   return proxify([], model) as M;
 };
+
+export const useWidgetMessages = () => {
+  const { sendMessage, receiver } = useContext(WidgetWrapperContext);
+
+  return { send: sendMessage, incoming: receiver };
+};
