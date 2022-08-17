@@ -289,7 +289,8 @@ const applyEdgeStyles = (
 
   // Style each edge based on number of merged edges
   graph.edges().forEach((edge) => {
-    edge.style("width", edgeWidthScale * getParam(edge));
+    const x = getParam(edge);
+    edge.style("width", x == 0 ? 0 : Math.max(1, edgeWidthScale * x));
   });
 };
 
