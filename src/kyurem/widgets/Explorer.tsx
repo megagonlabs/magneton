@@ -79,7 +79,7 @@ export const Explorer = () => {
             ]}
             data={{
               loading: model.status.children?.loading,
-              value: model.data.children,
+              value: model.data.children?.sort((a, b) => b.y - a.y),
             }}
             signals={{
               select: {
@@ -97,7 +97,13 @@ export const Explorer = () => {
           <LongBarChart
             spec={[
               {
-                encoding: { color: { field: "type", type: "nominal" } },
+                encoding: {
+                  color: {
+                    field: "type",
+                    type: "nominal",
+                    scale: { domain: ["in", "out", "in/out"] },
+                  },
+                },
               },
               horizontalBarChart({
                 categories: { field: "label", sort: { field: "type" } },
@@ -113,7 +119,7 @@ export const Explorer = () => {
                   label: `${r.x}${r.type ? ` (${r.type})` : ""}`,
                   ...r,
                 }))
-                .sort((a, b) => a.type.localeCompare(b.type)),
+                .sort((a, b) => a.type.localeCompare(b.type) || b.y - a.y),
             }}
             signals={{
               select: { on: [{ events: "rect:click", update: "datum" }] },
