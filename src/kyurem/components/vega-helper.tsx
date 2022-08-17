@@ -7,6 +7,7 @@ import { MarkDef } from "vega-lite/build/src/mark";
 import { PositionFieldDef } from "vega-lite/build/src/channeldef";
 import { useContentRect } from "../lib/use-content-rect";
 import { Box } from "@mui/system";
+import { LayerSpec, UnitSpec } from "vega-lite/build/src/spec";
 
 ////////////////////
 // MAIN COMPONENT //
@@ -122,16 +123,20 @@ export const mergeSpec = <T extends object>(...specs: T[]): T => {
   return specs.reduce((prev, curr) => extend(prev, curr));
 };
 
+type PartialRecursive<T> = T extends object
+  ? { [K in keyof T]+?: PartialRecursive<T[K]> }
+  : T;
+
 export const horizontalBarChart = ({
   categories,
   values,
-  bar,
-  label,
+  bar = {},
+  label = {},
 }: {
   categories?: PositionFieldDef<any>;
   values?: PositionFieldDef<any>;
-  bar?: Partial<MarkDef<"bar">>;
-  label?: Partial<MarkDef<"text">>;
+  bar?: PartialRecursive<LayerSpec<any> | UnitSpec<any>>;
+  label?: PartialRecursive<LayerSpec<any> | UnitSpec<any>>;
 } = {}) =>
   ({
     encoding: {
@@ -143,30 +148,35 @@ export const horizontalBarChart = ({
       },
     },
     layer: [
-      {
-        mark: { type: "bar", ...bar },
-        encoding: {
-          x: {
-            field: "y",
-            type: "quantitative",
-            title: "",
-            ...values,
+      mergeSpec(
+        {
+          mark: { type: "bar" },
+          encoding: {
+            x: {
+              field: "y",
+              type: "quantitative",
+              title: "",
+              ...values,
+            },
           },
         },
-      },
-      {
-        mark: {
-          type: "text",
-          align: "left",
-          x: 5,
-          fill: "black",
-          clip: true,
-          ...label,
+        bar
+      ),
+      mergeSpec(
+        {
+          mark: {
+            type: "text",
+            align: "left",
+            x: 5,
+            fill: "black",
+            clip: true,
+          },
+          encoding: {
+            text: { field: categories?.field ?? "x" },
+            detail: { aggregate: "count" },
+          },
         },
-        encoding: {
-          text: { field: categories?.field ?? "x" },
-          detail: { aggregate: "count" },
-        },
-      },
+        label
+      ),
     ],
   } as VisualizationSpec);

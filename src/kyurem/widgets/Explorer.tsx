@@ -50,14 +50,33 @@ export const Explorer = () => {
       <Pane direction="column">
         <Pane>
           <LongBarChart
-            spec={horizontalBarChart({
-              categories: { sort: null },
-              bar: {
-                fill: model.state.nodelabel
-                  ? nodeColorScale(model.state.nodelabel)
-                  : undefined,
-              },
-            })}
+            spec={[
+              horizontalBarChart({
+                categories: { sort: null },
+                bar: {
+                  mark: {
+                    fill: model.state.nodelabel
+                      ? nodeColorScale(model.state.nodelabel)
+                      : undefined,
+                  },
+                  encoding: {
+                    stroke: { value: "red" },
+                    strokeWidth: {
+                      condition: [
+                        {
+                          value: 3,
+                          test: {
+                            field: "x",
+                            equal: model.state.nodetitle ?? false,
+                          },
+                        },
+                      ],
+                      value: 0,
+                    },
+                  },
+                },
+              }),
+            ]}
             data={{
               loading: model.status.children?.loading,
               value: model.data.children,
@@ -77,7 +96,9 @@ export const Explorer = () => {
         <Pane>
           <LongBarChart
             spec={[
-              { encoding: { color: { field: "type", type: "nominal" } } },
+              {
+                encoding: { color: { field: "type", type: "nominal" } },
+              },
               horizontalBarChart({
                 categories: { field: "label", sort: { field: "type" } },
               }),
@@ -85,12 +106,14 @@ export const Explorer = () => {
             data={{
               loading: model.status.relations?.loading,
               error: model.status.relations?.error,
-              value: model.data.relations?.map((r) => ({
-                ...r,
-                direction: r.type,
-                type: "in/out",
-                label: `${r.x}${r.type ? ` (${r.type})` : ""}`,
-              })),
+              value: model.data.relations
+                ?.map((r) => ({
+                  direction: r.type,
+                  type: "in/out",
+                  label: `${r.x}${r.type ? ` (${r.type})` : ""}`,
+                  ...r,
+                }))
+                .sort((a, b) => a.type.localeCompare(b.type)),
             }}
             signals={{
               select: { on: [{ events: "rect:click", update: "datum" }] },
@@ -129,7 +152,7 @@ type Model = {
     children?: ChildDatum[];
     relations?: RelationDatum[];
   };
-  state: { selection?: string | null; nodelabel?: string };
+  state: { selection?: string | null; nodelabel?: string; nodetitle?: string };
 };
 
 type RelationDatum = {
