@@ -32,14 +32,11 @@ export const Explorer = () => {
               baseSchema={baseSchema}
               nodeColorScale={nodeColorScale}
               schema={model.data.schema}
-              selection={model.state.selection}
+              highlightLabel={model.state.nodelabel}
               onSelect={(node) => {
                 if (!node) {
-                  model.state.selection = null;
                   model.actions.filter_by_label(null);
-                }
-                if (node?.isNode()) {
-                  model.state.selection = node.id();
+                } else if (node?.isNode()) {
                   model.actions.filter_by_label(node.data("label"));
                 }
               }}
@@ -156,7 +153,6 @@ type Model = {
     relations?: RelationDatum[];
   };
   state: {
-    selection?: string | null;
     nodelabel?: string;
     nodetitle?: string;
     relation?: { type: string; direction?: string };

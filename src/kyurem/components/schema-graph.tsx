@@ -24,13 +24,13 @@ export const SchemaGraph = ({
   schema,
 
   onSelect,
-  selection,
+  highlightLabel,
 }: {
   baseSchema: Schema;
   nodeColorScale: (label: string) => string;
   schema?: Schema;
 
-  selection: string | null | undefined;
+  highlightLabel: string | null | undefined;
   onSelect: (selection?: NodeSingular | EdgeSingular) => void;
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -66,13 +66,13 @@ export const SchemaGraph = ({
   }, [cyRef.current, onSelect]);
 
   // Update the selected node in display
-  const prevSelection = usePrevious(selection);
+  const prevSelection = usePrevious(highlightLabel);
   useEffect(() => {
     const cy = cyRef.current;
     if (!cy) return;
     if (prevSelection) cy.$id(prevSelection).data("isSelected", false);
-    if (selection) cy.$id(selection).data("isSelected", true);
-  }, [cyRef.current, prevSelection, selection]);
+    if (highlightLabel) cy.$id(highlightLabel).data("isSelected", true);
+  }, [cyRef.current, prevSelection, highlightLabel]);
 
   // Update stylesheet of graph
   useEffect(() => {
