@@ -11,10 +11,12 @@ import {
 
 export const Pane = ({
   initialHeight = 400,
+  initialSize,
   children,
   direction = "row",
 }: {
   initialHeight?: number;
+  initialSize?: number;
   direction?: "row" | "column";
   children?:
     | ReactNode
@@ -24,6 +26,14 @@ export const Pane = ({
   const parent = useParentPane();
 
   const dragHelper = useDragHelper();
+
+  // Set initial values
+  useEffect(() => {
+    if (initialSize && paneRef.current) {
+      paneRef.current.style.flexBasis = `${initialSize}px`;
+      paneRef.current.style.flexGrow = "0";
+    }
+  }, [paneRef.current]);
 
   // Handle events for root panes
   const minHeight = 100;

@@ -1,7 +1,6 @@
 import React, { useMemo } from "react";
 import { Pane } from "../components/panes/pane";
 import { useWidgetModel } from "../core/widget";
-import * as d3 from "d3";
 import { LoadingOverlay } from "../components/loading-overlay";
 import {
   makeNodeColorScale,
@@ -10,6 +9,7 @@ import {
 } from "../components/schema-graph";
 import { useObject } from "../lib/use-object";
 import { horizontalBarChart, VegaHelper } from "../components/vega-helper";
+import { LongBarChart } from "../components/long-bar-chart";
 
 export const Explorer = () => {
   const model = useWidgetModel<Model>();
@@ -49,8 +49,9 @@ export const Explorer = () => {
       </Pane>
       <Pane direction="column">
         <Pane>
-          <VegaHelper
+          <LongBarChart
             spec={horizontalBarChart({
+              categories: { sort: null },
               bar: {
                 fill: model.state.nodelabel
                   ? nodeColorScale(model.state.nodelabel)
@@ -59,11 +60,12 @@ export const Explorer = () => {
             })}
             data={{
               loading: model.status.children?.loading,
-              error: model.status.children?.error,
               value: model.data.children,
             }}
             signals={{
-              select: { on: [{ events: "rect:click", update: "datum" }] },
+              select: {
+                on: [{ events: "rect:click", update: "datum" }],
+              },
             }}
             signalListeners={{
               select(_, datum: ChildDatum) {
@@ -73,7 +75,7 @@ export const Explorer = () => {
           />
         </Pane>
         <Pane>
-          <VegaHelper
+          <LongBarChart
             spec={[
               { encoding: { color: { field: "type", type: "nominal" } } },
               horizontalBarChart({

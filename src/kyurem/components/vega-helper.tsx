@@ -1,10 +1,12 @@
-import React, { ComponentProps, useMemo } from "react";
+import React, { ComponentProps, useMemo, useRef } from "react";
 import { Signal, Spec } from "vega";
 import { VegaLite, VisualizationSpec } from "react-vega";
 import { LoadingOverlay } from "./loading-overlay";
 import { usePaneSize } from "./panes/pane-context";
 import { MarkDef } from "vega-lite/build/src/mark";
 import { PositionFieldDef } from "vega-lite/build/src/channeldef";
+import { useContentRect } from "../lib/use-content-rect";
+import { Box } from "@mui/system";
 
 ////////////////////
 // MAIN COMPONENT //
@@ -18,17 +20,23 @@ export const VegaHelper = <Datum,>({
   "patch" | "data" | "signalListeners" | "spec"
 > & {
   spec: Partial<VisualizationSpec> | Partial<VisualizationSpec>[];
-  data: Datum[] | { loading?: boolean; error?: any; value?: Datum[] };
+  data?: Datum[] | { loading?: boolean; error?: any; value?: Datum[] } | null;
   signals?: { [name: string]: Partial<Signal> };
   signalListeners?: { [K in string]: (name: K, value: Datum) => void };
-}) =>
-  Array.isArray(data) ? (
-    <Component data={data} {...props} />
-  ) : (
-    <LoadingOverlay loading={data.loading} error={data.error}>
-      {data.value && <Component data={data.value} {...props} />}
+}) => {
+  const rawData = useRef<Datum[]>();
+  if (data) rawData.current = Array.isArray(data) ? data : data.value;
+
+  return (
+    <LoadingOverlay
+      loading={
+        !data || !rawData.current || (!Array.isArray(data) && data.loading)
+      }
+    >
+      {rawData.current && <Component data={rawData.current} {...props} />}
     </LoadingOverlay>
   );
+};
 
 const Component = ({
   data,
@@ -46,8 +54,7 @@ const Component = ({
     [signalName: string]: (name: string, value: any) => void;
   };
 }) => {
-  const { width, height } = usePaneSize() ?? {};
-  if (width === 0 || height === 0) return <></>;
+  const [ref, { width = 0, height = 0 } = {}] = useContentRect();
 
   const spec2 = useMemo(
     () => (Array.isArray(spec) ? mergeSpec(...spec) : spec),
@@ -55,28 +62,30 @@ const Component = ({
   );
 
   return (
-    <VegaLite
-      spec={{
-        width,
-        height,
-        autosize: { type: "fit", contains: "padding" },
-        data: { name: "data" },
+    <Box ref={ref} position="absolute" width="100%" height="100%">
+      <VegaLite
+        spec={{
+          width,
+          height,
+          autosize: { type: "fit", contains: "padding" },
+          data: { name: "data" },
 
-        ...spec2,
-      }}
-      data={{ data }}
-      patch={(spec) => ({
-        ...spec,
-        signals: [
-          ...(spec.signals ?? []),
-          ...Object.entries(signals).map(([name, signal]) => ({
-            name,
-            ...signal,
-          })),
-        ],
-      })}
-      {...(props as any)}
-    />
+          ...spec2,
+        }}
+        data={{ data }}
+        patch={(spec) => ({
+          ...spec,
+          signals: [
+            ...(spec.signals ?? []),
+            ...Object.entries(signals).map(([name, signal]) => ({
+              name,
+              ...signal,
+            })),
+          ],
+        })}
+        {...(props as any)}
+      />
+    </Box>
   );
 };
 
@@ -151,6 +160,7 @@ export const horizontalBarChart = ({
           align: "left",
           x: 5,
           fill: "black",
+          clip: true,
           ...label,
         },
         encoding: {
