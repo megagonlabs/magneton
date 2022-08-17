@@ -65,15 +65,6 @@ export const SchemaGraph = ({
     };
   }, [cyRef.current, onSelect]);
 
-  // Update the selected node in display
-  const prevSelection = usePrevious(highlightLabel);
-  useEffect(() => {
-    const cy = cyRef.current;
-    if (!cy) return;
-    if (prevSelection) cy.$id(prevSelection).data("isSelected", false);
-    if (highlightLabel) cy.$id(highlightLabel).data("isSelected", true);
-  }, [cyRef.current, prevSelection, highlightLabel]);
-
   // Update stylesheet of graph
   useEffect(() => {
     const cy = cyRef.current;
@@ -162,6 +153,23 @@ export const SchemaGraph = ({
     // Apply dynamic styles
     applyEdgeStyles(cy);
   }, [cyRef.current, schema]);
+
+  // Update the selected node in display
+  const prevLabel = usePrevious(highlightLabel);
+  useEffect(() => {
+    const cy = cyRef.current;
+    if (!cy) return;
+    if (prevLabel)
+      cy.$(`node[label=${JSON.stringify(prevLabel)}]`).data(
+        "isSelected",
+        false
+      );
+    if (highlightLabel)
+      cy.$(`node[label=${JSON.stringify(highlightLabel)}]`).data(
+        "isSelected",
+        true
+      );
+  }, [cyRef.current, prevLabel, highlightLabel]);
 
   return <Box ref={containerRef} width="100%" height="100%" />;
 };
