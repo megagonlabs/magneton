@@ -1,120 +1,72 @@
-from ..core.widget import WidgetBase, WidgetModel
+from ..core.widget import WidgetModel
+from .ReducerWidget import ReducerWidget
 
 
 class Explorer:
-    def __init__(self, service, model=None):
-        if model == None:
-            model = WidgetModel.dotdict()
+    def __init__(self, actions, base_schema):
+        def filter_by_label(state, nodelabel=None):
+            # Update which node/bar is highlighted
+            state.nodelabel = nodelabel
+            state.nodetitle = None
+            state.relation = None
 
-            # Transient/temporaty status, e.g., loading status
-            model.status = {}
+            # Set loading indicator
+            state.is_loading = True
 
-            # State/parameters of widget
-            model.state = {}
-            model.state.nodelabel = None
-            model.state.nodetitle = None
+            # Render component
+            yield state
 
-            # Data in widget
-            model.data = {}
+            # Fetch data
+            data = actions["filter_by_label"](state, nodelabel)
 
-            # Actions callable from widget
-            model.actions = {}
-            model.actions.filter_by_label = self.filter_by_label
-            model.actions.filter_by_title = self.filter_by_title
-            model.actions.filter_by_relation = self.filter_by_relation
+            # Assign data to state
+            for key, value in data.items():
+                state.data[key] = value
 
-            # Initialize view
-            model.data.children = service.get_children_node_distributions()
-            model.data.relations = service.get_relation_distribution()
+            # Remove loading indicator
+            del state["is_loading"]
 
-        # Internal
-        self.__service = service
-        self.__widget = WidgetBase("Explorer", model=model)
+            # Render component
+            yield state
 
-        self.model = model
+        def filter_by_title(state, nodetitle=None):
+            state.nodetitle = nodetitle
+            state.is_loading = True
+            yield state
 
-    async def filter_by_label(self, nodelabel):
-        service = self.__service
-        model = self.model
+            data = actions["filter_by_title"](state, nodetitle)
+            for key, value in data.items():
+                state.data[key] = value
+            del state["is_loading"]
+            yield state
 
-        model.data.schema = None
-        model.state.nodelabel = nodelabel
-        model.state.nodetitle = None
+        def filter_by_relation(state, type, direction=None):
+            state.relation = {"type": type, "direction": direction}
+            state.is_loading = True
+            yield state
 
-        model.status.children = {"loading": True}
-        model.status.relations = {"loading": True}
-        await self.__widget.flush()
+            data = actions["filter_by_relation"](state, type, direction)
+            for key, value in data.items():
+                state.data[key] = value
+            del state["is_loading"]
+            yield state
 
-        model.data.children = service.get_children_node_distributions(
-            nodelabel, "title", nodelabel
-        )
-        if nodelabel:
-            model.data.relations = service.get_node_degree_distributions(nodelabel)
-        else:
-            model.data.relations = service.get_relation_distribution()
-
-        model.status.children = {}
-        model.status.relations = {}
-
-    async def filter_by_title(self, nodetitle):
-        service = self.__service
-        model = self.model
-
-        model.state.nodetitle = nodetitle
-
-        model.status.schema = {"loading": True}
-        model.status.relations = {"loading": True}
-        await self.__widget.flush()
-
-        result = service.get_node_neighborhood(
+        self.__widget = ReducerWidget(
+            "Explorer",
+            {"base_schema": base_schema, "data": {}},
             {
-                "node_label": model.state.nodelabel
-                if model.state.nodelabel
-                else nodetitle,
-                "node_property": "title",
-                "node_property_value": nodetitle,
-            }
-        )
-        model.data.schema = result["schema"]
-        model.data.relations = [
-            {"x": relation["label"], "y": relation["count"], "type": type}
-            for type, relations in result["relation_dist"].items()
-            for relation in relations
-        ]
-
-        model.status.schema = {}
-        model.status.relations = {}
-
-    async def filter_by_relation(self, type, direction):
-        service = self.__service
-        model = self.model
-
-        model.state.relation={ 'type': type, 'direction': direction }
-        model.status.schema = {"loading": True}
-        model.status.children = {"loading": True}
-        await self.__widget.flush()
-
-        if model.state.nodelabel and model.state.nodetitle:
-            node = {
-                "node_label": model.state.nodelabel,
-                "node_property": "title",
-                "node_property_value": model.state.nodetitle,
-            }
-        else:
-            node = None
-
-        result = service.get_relation_neighborhood(
-            node, {"type": type, "direction": direction}
+                "filter_by_label": filter_by_label,
+                "filter_by_title": filter_by_title,
+                "filter_by_relation": filter_by_relation,
+            },
         )
 
-        model.data.schema = result["schema"]
-        if not node:
-            model.data.children = [
-                {"x": x, "y": y} for x, y in result["node_dist"].items()
-            ]
+        for state in filter_by_label(self.__widget.model.state):
+            self.__widget.model.state = state
 
-        model.status.schema = {}
-        model.status.children = {}
+    @property
+    def history(self):
+        return self.__widget.history
 
     def show(self):
         return self.__widget.component()

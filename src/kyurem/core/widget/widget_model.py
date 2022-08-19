@@ -25,7 +25,7 @@ class Observable:
 
 class WidgetModel(ABC):
     @staticmethod
-    def dotdict(): 
+    def dotdict():
         return DotDictProxy()
 
     _is_widget_model = None
@@ -209,6 +209,9 @@ class DotDictProxy(WidgetModel):
 
     def __getitem__(self, key):
         target = WidgetModel.unproxy(self)
+        if key not in target:
+            return None
+
         return WidgetModel.proxy(target[key], source=self, dotdict=True)
 
 
