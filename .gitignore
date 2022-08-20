@@ -6,6 +6,7 @@ bundle.*.js
 __pycache__
 aws_cred.json
 neo4j_cred.json
+**/.DS_Stroe
 
 .yarn/*
 !.yarn/patches
