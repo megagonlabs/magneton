@@ -24,13 +24,13 @@ export const SchemaGraph = ({
   schema,
 
   onSelect,
-  selection,
+  highlightLabel,
 }: {
   baseSchema: Schema;
   nodeColorScale: (label: string) => string;
   schema?: Schema;
 
-  selection: string | null | undefined;
+  highlightLabel: string | null | undefined;
   onSelect: (selection?: NodeSingular | EdgeSingular) => void;
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -64,15 +64,6 @@ export const SchemaGraph = ({
       cy.off("tap", cb);
     };
   }, [cyRef.current, onSelect]);
-
-  // Update the selected node in display
-  const prevSelection = usePrevious(selection);
-  useEffect(() => {
-    const cy = cyRef.current;
-    if (!cy) return;
-    if (prevSelection) cy.$id(prevSelection).data("isSelected", false);
-    if (selection) cy.$id(selection).data("isSelected", true);
-  }, [cyRef.current, prevSelection, selection]);
 
   // Update stylesheet of graph
   useEffect(() => {
@@ -162,6 +153,23 @@ export const SchemaGraph = ({
     // Apply dynamic styles
     applyEdgeStyles(cy);
   }, [cyRef.current, schema]);
+
+  // Update the selected node in display
+  const prevLabel = usePrevious(highlightLabel);
+  useEffect(() => {
+    const cy = cyRef.current;
+    if (!cy) return;
+    if (prevLabel)
+      cy.$(`node[label=${JSON.stringify(prevLabel)}]`).data(
+        "isSelected",
+        false
+      );
+    if (highlightLabel)
+      cy.$(`node[label=${JSON.stringify(highlightLabel)}]`).data(
+        "isSelected",
+        true
+      );
+  }, [cyRef.current, prevLabel, highlightLabel]);
 
   return <Box ref={containerRef} width="100%" height="100%" />;
 };
@@ -289,7 +297,8 @@ const applyEdgeStyles = (
 
   // Style each edge based on number of merged edges
   graph.edges().forEach((edge) => {
-    edge.style("width", edgeWidthScale * getParam(edge));
+    const x = getParam(edge);
+    edge.style("width", x == 0 ? 0 : Math.max(1, edgeWidthScale * x));
   });
 };
 
