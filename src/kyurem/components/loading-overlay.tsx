@@ -33,17 +33,30 @@ export const LoadingOverlay = ({
         sx={{
           opacity: loading || error ? 1 : 0,
           transition: "opacity 0.2s",
-          pointerEvents: "none",
+          pointerEvents: loading || error ? undefined : "none",
         }}
       >
         {error ? (
-          <>
+          <Box
+            color="white"
+            minWidth={300}
+            width="60%"
+            borderRadius={1}
+            padding={1}
+            bgcolor="#100020"
+            maxHeight="80%"
+            display="flex"
+            gap={1}
+            alignItems="start"
+          >
             <ErrorIcon
               fontSize="large"
               sx={{ color: (theme) => theme.palette.error.main }}
             />
-            <pre style={{ color: "white", width: 300 }}>{error}</pre>
-          </>
+            <Box fontFamily="monospace" whiteSpace="pre" overflow="auto">
+              {error}
+            </Box>
+          </Box>
         ) : (
           <CircularProgress sx={{ color: "white" }} />
         )}
