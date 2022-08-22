@@ -20,8 +20,7 @@ class Explorer:
             data = actions["filter_by_label"](state, nodelabel)
 
             # Assign data to state
-            for key, value in data.items():
-                state.data[key] = value
+            WidgetModel.dict(state.data).update(data)
 
             # Remove loading indicator
             del state["is_loading"]
@@ -35,8 +34,7 @@ class Explorer:
             yield state
 
             data = actions["filter_by_title"](state, nodetitle)
-            for key, value in data.items():
-                state.data[key] = value
+            WidgetModel.dict(state.data).update(data)
             del state["is_loading"]
             yield state
 
@@ -46,8 +44,7 @@ class Explorer:
             yield state
 
             data = actions["filter_by_relation"](state, type, direction)
-            for key, value in data.items():
-                state.data[key] = value
+            WidgetModel.dict(state.data).update(data)
             del state["is_loading"]
             yield state
 
