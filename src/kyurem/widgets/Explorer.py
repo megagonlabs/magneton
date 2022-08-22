@@ -53,7 +53,7 @@ class Explorer:
 
         self.__widget = ReducerWidget(
             "Explorer",
-            {"base_schema": base_schema, "data": {}},
+            {"data": {"base_schema": base_schema}},
             {
                 "filter_by_label": filter_by_label,
                 "filter_by_title": filter_by_title,
