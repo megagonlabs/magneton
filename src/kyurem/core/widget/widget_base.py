@@ -1,5 +1,6 @@
 import asyncio
 from collections import defaultdict
+from traceback import format_exception, format_stack, format_tb
 from typing import Any, Callable, Dict, Mapping, List, TypedDict, Union
 import idom
 from idom import component, use_effect, use_memo, use_state
@@ -217,9 +218,9 @@ def _call_no_throw(func, args):
         error = None
     except Exception as e:
         value = None
-        error = e.args[0]
+        error = e.args[0] + "\n" + "".join(format_tb(e.__traceback__))
 
-    return value, None if not error else str(error)
+    return value, error
 
 
 async def _async_call_no_throw(func, args, cb):
@@ -231,9 +232,9 @@ async def _async_call_no_throw(func, args, cb):
         error = None
     except Exception as e:
         value = None
-        error = e.args[0]
+        error = e.args[0] + "\n" + "".join(format_tb(e.__traceback__))
 
-    result = (value, None if not error else str(error))
+    result = (value, error)
     cb(result)
 
 
