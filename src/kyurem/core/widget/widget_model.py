@@ -25,8 +25,12 @@ class Observable:
 
 class WidgetModel(ABC):
     @staticmethod
-    def dotdict():
-        return DotDictProxy()
+    def dict(target={}):
+        return DictProxy(WidgetModel.unproxy(target))
+
+    @staticmethod
+    def dotdict(target={}):
+        return DotDictProxy(WidgetModel.unproxy(target))
 
     _is_widget_model = None
 
@@ -49,7 +53,7 @@ class WidgetModel(ABC):
         if WidgetModel.has_instance(target):
             if observable is None:
                 observable = target.__observable
-            return type(target)(target, tag, observable)
+            return type(target)(WidgetModel.unproxy(target), tag, observable)
         if isinstance(target, dict):
             if dotdict:
                 return DotDictProxy(target, tag, observable)
@@ -124,6 +128,8 @@ class WidgetModel(ABC):
         if observable is None:
             observable = Observable()
 
+        assert not WidgetModel.has_instance(target)
+
         self.__target = target
         self.__tag = tag
         self.__observable = observable
@@ -187,7 +193,9 @@ class WidgetModel(ABC):
 
 
 class DictProxy(WidgetModel):
-    pass
+    def update(self, *args, **kwargs):
+        WidgetModel.unproxy(self).update(*args, **kwargs)
+        WidgetModel.notify(self)
 
 
 class DotDictProxy(WidgetModel):

@@ -16,7 +16,7 @@ export const Explorer = () => {
   const { actions, state } = useWidgetModel<Model>();
   const data = state.data;
 
-  const baseSchema = useObject(state.base_schema);
+  const baseSchema = useObject(data.base_schema);
   const nodeColorScale = useMemo(
     () => makeNodeColorScale(baseSchema),
     [baseSchema]
@@ -140,13 +140,12 @@ type Model = {
   state: {
     is_loading?: boolean;
 
-    base_schema: Schema;
-
     nodelabel?: string;
     nodetitle?: string;
     relation?: { type: string; direction?: string };
 
     data: {
+      base_schema: Schema;
       schema?: Schema;
       children?: ChildDatum[];
       relations?: RelationDatum[];
