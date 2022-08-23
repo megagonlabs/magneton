@@ -2,6 +2,8 @@ import uuid, traceback, json
 import pandas as pd
 from .database import Database
 from collections import defaultdict
+import math
+import random
 
 class Graph:
 
@@ -357,6 +359,70 @@ class Graph:
 
         return {'schema':neighborhood_edge_list, 'relation_dist': relation_dist}
 
+    def get_sampled_node_neighborhood_graph_summary(self, node, n_sample=25):
+        node_label = node['node_label']
+        node_property = node['node_property']
+        node_property_value = node['node_property_value']
+
+        query = ('MATCH (n:' + node_label + ' {' + node_property + ':"' + 
+                  node_property_value + '"}) ' +
+                 'CALL apoc.path.spanningTree(n, {' +
+                 'relationshipFilter: "< | >",' +
+                 'minLevel: 1,' +
+                 'maxLevel: 1 }) ' +
+                 'YIELD path ' + 
+                 'WITH apoc.path.elements(path) AS elements ' +
+                 'UNWIND range(0, size(elements)-2) AS index ' +
+                 'WITH elements, index ' +
+                 'WHERE index %2 = 0 ' +
+                 'RETURN elements[index] AS source, ' +
+                 'type(elements[index+1]) AS relation, ' + 
+                 'elements[index+2] AS target'
+                 )
+        result_list = self.neo4j_conn.run_query(query)
+        neighborhood_edge_list = []
+        neighborhood_edge_dict = defaultdict(list)
+        relation_dict = {}
+        for res in result_list:
+            try:
+                relation_label = res['relation']
+                source_node = {'node_label': res['source']['type'],
+                                'node_property': node_property, 
+                                'node_property_value': res['source'][node_property]}
+                target_node = {'node_label': res['target']['type'],
+                               'node_property': node_property, 
+                               'node_property_value': res['target'][node_property]}
+                neighborhood_edge_dict[relation_label].append((source_node, target_node))
+            except:
+                print(res)
+            
+        relation_dist = self.get_node_degree_distributions_v1(node_label, 
+            node_property, node_property_value)
+
+        n_sample_drawn = math.ceil(n_sample / len(neighborhood_edge_dict.keys()))
+
+        print(n_sample, n_sample_drawn)
+        for key, value in neighborhood_edge_dict.items():
+            edge_list = value
+            n = min(n_sample_drawn, len(edge_list))
+            random.shuffle(edge_list)
+            edge_list = edge_list[0:n]
+
+            for edge in edge_list:
+                source_node, target_node = edge
+                neighborhood_edge_list.append({
+                            "source": source_node,
+                            "target": target_node,
+                            "weight": 1,
+                            "label": key,
+                            "emphasis": "yes"
+                        })
+
+        print(len(neighborhood_edge_list))
+        print(neighborhood_edge_list)
+
+        return {'schema':neighborhood_edge_list, 'relation_dist': relation_dist}
+
     def get_node_neighborhood_schema(self, node):
         node_label = node['node_label']
         node_property = node['node_property']
@@ -706,3 +772,98 @@ class Graph:
             })
 
         return {'schema':edge_list, 'node_dist': {}}
+
+    def get_sampled_relation_neighborhood_graph_summary(self, node, relation, n_sample=25):
+        relationship_name = relation['type']
+        if node is None:
+            edge_list = []
+            node_dict = defaultdict(set)
+            query = ('MATCH (source)-[r:' + relationship_name + ']->(target)'+
+                ' RETURN source,'+
+                ' target')
+            result_list = self.neo4j_conn.run_query(query)
+
+            for res in result_list:
+                source_node = {'node_label': res['source']['type'],
+                                'node_property': 'title', 
+                                'node_property_value': res['source']['title']}
+                target_node = {'node_label': res['target']['type'],
+                               'node_property': 'title', 
+                               'node_property_value': res['target']['title']}
+                weight = 1
+                node_dict[source_node['node_label']].add(source_node['node_property_value'])
+                node_dict[target_node['node_label']].add(target_node['node_property_value'])
+                edge_list.append({
+                    "source": source_node,
+                    "target": target_node,
+                    "weight": weight,
+                    "label": relationship_name,
+                    "emphasis": "yes"
+                })
+            node_dist = {}
+
+            for key, value in node_dict.items():
+                node_dist[key] = len(value)
+            n_sample_drawn = min(n_sample, len(edge_list))
+            random.shuffle(edge_list)
+            sampled_edge_list = edge_list[0:n_sample_drawn]
+            return {'schema':sampled_edge_list, 'node_dist': node_dist}
+
+        node_label = node['node_label']
+        node_property = node['node_property']
+        node_property_value = node['node_property_value']
+        
+        direction = relation['direction']
+
+        if direction == 'in':
+            relation_param = "<" + relationship_name
+        else:
+            relation_param = relationship_name + ">"
+
+        query = ('MATCH (n:' + node_label + ' {' + node_property + ':"' + 
+                  node_property_value + '"}) ' +
+                 'CALL apoc.neighbors.athop(n, "' + relation_param + '", 1) ' +
+                 'YIELD node ' +
+                 'RETURN node')
+        result_list = self.neo4j_conn.run_query(query)
+
+        edge_list = []
+        relation_dict = defaultdict(list)
+        
+        for res in result_list:
+            if direction == 'in':
+                source_node = {'node_label': res['node']['type'],
+                                'node_property': node_property, 
+                                'node_property_value': res['node'][node_property]}
+                target_node = node
+                
+                edge_list.append((source_node, target_node))
+            else:
+                source_node = node 
+                target_node = {'node_label': res['node']['type'],
+                                'node_property': node_property, 
+                                'node_property_value': res['node'][node_property]}
+                edge_list.append((source_node, target_node))
+
+        for key, value in relation_dict.items():
+            source, target, _type = key
+            edge_list.append({
+                "source": value['source'],
+                "target": value['target'],
+                "weight": 1,
+                "label": _type,
+                "emphasis": "yes"
+            })
+        n_sample_drawn = min(n_sample, len(edge_list))
+        random.shuffle(edge_list)
+        sampled_edge_list = []
+        for i in range(n):
+            source_node, target_node = edge_list[i]
+            sampled_edge_list.append({
+                "source": source_node,
+                "target": target_node,
+                "weight": 1,
+                "label": relationship_name,
+                "emphasis": "yes"
+            })
+        return {'schema':sampled_edge_list, 'node_dist': {}}
