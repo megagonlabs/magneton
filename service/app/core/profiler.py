@@ -43,12 +43,22 @@ class Profiler:
             distribution_list.append({"x": key, "y": value["count"], "type":value["type"]})
         return distribution_list
 
+    def get_node_degree_distributions_v1(self, nodeType):
+        distribution = self.graph.get_node_degree_distributions_v1(nodeType) 
+
+        distribution_list = []
+        for edge in distribution['in']:
+            distribution_list.append({"x": edge["label"], "y": edge["count"], "type":"in"})
+        for key, value in distribution['out']:
+            distribution_list.append({"x": edge["label"], "y": edge["count"], "type":"out"})
+        return distribution_list
+
     def get_kh_edge_list(self):
         return self.graph.get_graph_edge_list_v1()
 
     def get_node_neighborhood(self, node):
-        return self.graph.get_node_neighborhood_graph_summary(node)
+        return self.graph.get_sampled_node_neighborhood_graph_summary(node)
 
     def get_relation_neighborhood(self, node, relation):
-        return self.graph.get_relation_neighborhood_graph_summary(node, relation)
+        return self.graph.get_sampled_relation_neighborhood_graph_summary(node, relation)
         
