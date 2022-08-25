@@ -73,38 +73,58 @@ export const SchemaGraph = ({
     const cy = cyRef.current;
     if (!cy) return;
 
-    cy.json({
-      style: [
-        {
-          selector: "node",
-          style: {
-            label: "data(label)",
-            "border-width": (node: NodeSingular) =>
-              node.data("isSelected") ? 3 : 0,
-            "border-color": "red",
+    cy.style([
+      {
+        selector: "node",
+        style: {
+          label: "data(label)",
+          "text-outline-color": "#fff",
+          "text-outline-width": 2,
 
-            ...(nodeColor && {
-              "background-color": (node: NodeSingular) =>
-                nodeColor(node.data("label")),
-            }),
-          },
+          "border-width": (node: NodeSingular) =>
+            node.data("isSelected") ? 3 : 0,
+          "border-color": "red",
+
+          ...(nodeColor && {
+            "background-color": (node: NodeSingular) =>
+              nodeColor(node.data("label")),
+          }),
         },
-        {
-          selector: "edge",
-          style: {
-            "line-cap": "round",
+      },
+      {
+        selector: "edge",
+        style: {
+          "line-cap": "round",
+          "curve-style": "bezier",
+          width: "data(width)",
+
+          label: (edge: EdgeSingular) => {
+            const data = edge.data() as CytoEdgeData;
+            const labels = new Set(
+              data.children.map((c) => c.schemaEdge.label)
+            );
+            return labels.size == 1 ? [...labels][0] : "";
+          },
+          "text-rotation": "autorotate",
+          color: "#888",
+          "text-outline-color": "#fff",
+          "text-outline-width": 2,
+
+          "target-arrow-shape": (edge: EdgeSingular) =>
+            edge.isLoop() ? "none" : "triangle",
+
+          ...(nodeColor && {
+            "target-arrow-color": (edge: EdgeSingular) =>
+              nodeColor(edge.target().data("label")),
             "line-fill": "linear-gradient",
-
-            ...(nodeColor && {
-              "line-gradient-stop-colors": (edge: EdgeSingular) => [
-                nodeColor(edge.source().data("label")),
-                nodeColor(edge.target().data("label")),
-              ],
-            }),
-          },
+            "line-gradient-stop-colors": ((edge: EdgeSingular) => [
+              nodeColor(edge.source().data("label")),
+              nodeColor(edge.target().data("label")),
+            ]) as any,
+          }),
         },
-      ],
-    });
+      },
+    ]);
   }, [cyRef.current, nodeColor]);
 
   // Update schema
@@ -235,7 +255,10 @@ const mergeParallelEdges = <
   } = {};
   elements.edges.forEach((edge) => {
     // Ignore directionality of edge
-    const [source, target] = [edge.data.source, edge.data.target].sort();
+    // const [source, target] = [edge.data.source, edge.data.target].sort();
+
+    // Preserve directionality of edge
+    const [source, target] = [edge.data.source, edge.data.target];
 
     // Create merged edge if it doesn't already exist
     const id = `${source} --- ${target}`;
@@ -291,7 +314,7 @@ const applyEdgeStyles = (
   // Style each edge based on number of merged edges
   graph.edges().forEach((edge) => {
     const x = getParam(edge);
-    edge.style("width", x == 0 ? 0 : Math.max(1, edgeWidthScale * x));
+    edge.data("width", x == 0 ? 0 : Math.max(1, edgeWidthScale * x));
   });
 };
 
