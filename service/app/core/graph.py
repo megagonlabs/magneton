@@ -46,12 +46,12 @@ class Graph:
         for result in results:
             nodeType = result['nodeType'][0]
             if nodeType not in exclude_labels:
-                countData = self.neo4j_conn.count_nodes_by_type(nodeType)
-                nodeTypeCount[nodeType] = countData[0]['nodeCount']
+                nodeTypeCount[nodeType] = self.neo4j_conn.count_nodes_by_type(nodeType)
+                result = self.neo4j_conn.get_type_node(nodeType)
                 metadata[nodeType] = {
                     'node_label': nodeType,
                     'title': nodeType,
-                    'uuid':countData[0]['n']['uuid']
+                    'uuid': result[0]['node']['uuid'] if result else "na"
                 }
         return nodeTypeCount, metadata
 
