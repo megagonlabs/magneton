@@ -42,12 +42,18 @@ class Graph:
         exclude_labels = []
         results = self.neo4j_conn.get_node_types()
         nodeTypeCount = {}
+        metadata = {}
         for result in results:
             nodeType = result['nodeType'][0]
             if nodeType not in exclude_labels:
-                nodeTypeCount[nodeType] = self.neo4j_conn.count_nodes_by_type(
-                    nodeType)
-        return nodeTypeCount
+                countData = self.neo4j_conn.count_nodes_by_type(nodeType)
+                nodeTypeCount[nodeType] = countData[0]['nodeCount']
+                metadata[nodeType] = {
+                    'node_label': nodeType,
+                    'title': nodeType,
+                    'uuid':countData[0]['n']['uuid']
+                }
+        return nodeTypeCount, metadata
 
     def get_stat_by_node_granularity(self, nodeType=None):
         nodeGranularityCount = {}
@@ -113,14 +119,17 @@ class Graph:
         return_node_type = 'dest'
         count_node_type = 'dest'
 
+        # get the immediate children of a node
         immediate_children = self.neo4j_conn.get_nodes_by_relation_and_type(
             source_label, source_filter, dest_label, dest_filter, 
             relation, return_node_type, count_node_type)
 
         compiled_results = {}
+        full_results = {}
 
         key1 = 'src' if return_node_type == 'source' else 'dest'
 
+        # for each immediate children, get their children count
         for child in immediate_children:
             source_filter = {}
             source_filter[node['node_property']] = child[key1][node['node_property']]
@@ -132,8 +141,14 @@ class Graph:
             key2 = 'src' if return_node_type == 'source' else 'dest'
 
             for result in results:
-                compiled_results[result[key2]['title']] = result['node_count'] + 1
-        return dict(sorted(compiled_results.items(), key=lambda item: item[1]))
+                compiled_results[result[key2][node['node_property']]] = result['node_count'] + 1
+                full_results[result[key2][node['node_property']]] = {
+                    'node_label': source_label,
+                    node['node_property']: result[key2][node['node_property']],
+                    'uuid':result[key2]['uuid']
+                }
+        compiled_results = dict(sorted(compiled_results.items(), key=lambda item: item[1]))
+        return compiled_results, full_results
 
     def relation_count(self):
         results = self.neo4j_conn.get_per_relation_count()

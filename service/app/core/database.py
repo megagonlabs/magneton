@@ -684,14 +684,14 @@ class Database:
         return result
 
     def count_nodes_by_type(self, type):
-        result = self._read_transaction(self._count_nodes_by_type, type)
+        result = self._read_transaction(self._count_nodes_by_type_v1, type)
 
         return result
 
     def _count_nodes_by_type(self, tx, t):
         result = tx.run(' MATCH (n: ' + t + ' ) ' +
-                        ' RETURN COUNT(n) as nodeCount')
-
+                        ' RETURN n, COUNT(n) as nodeCount')
+        return self.run_query(query)
         records = result.records()
         for record in records:
             items = record.items()
@@ -704,6 +704,11 @@ class Database:
                 return value
 
         return 0
+
+    def _count_nodes_by_type_v1(self, tx, t):
+        query = (' MATCH (n: ' + t + ' ) ' +
+                        ' RETURN n, COUNT(n) as nodeCount')
+        return self.run_query(query)
 
     def get_nodes_by_relation_and_type(self, source_label, source_filter, dest_label,
                                        dest_filter, relation, return_type, count_type):
