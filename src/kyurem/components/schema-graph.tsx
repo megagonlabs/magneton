@@ -78,6 +78,9 @@ export const SchemaGraph = ({
         selector: "node",
         style: {
           label: "data(label)",
+          "text-outline-color": "#fff",
+          "text-outline-width": 2,
+
           "border-width": (node: NodeSingular) =>
             node.data("isSelected") ? 3 : 0,
           "border-color": "red",
