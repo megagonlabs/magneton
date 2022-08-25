@@ -78,6 +78,8 @@ const base: Configuration = {
 const dev: Configuration = extend(base, {
   mode: "development",
 
+  devtool: "eval-source-map",
+
   output: {
     filename: "bundle.dev.js",
   },

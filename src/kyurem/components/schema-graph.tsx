@@ -3,15 +3,15 @@ import cytoscape, {
   BaseLayoutOptions,
   EdgeDefinition,
   EdgeSingular,
-  ElementsDefinition,
   EventObject,
   NodeDefinition,
   NodeSingular,
+  Singular,
 } from "cytoscape";
 import { Box } from "@mui/system";
 import hash from "object-hash";
 import * as d3 from "d3";
-import { usePrevious } from "react-use";
+import { useObject } from "../lib/use-object";
 cytoscape.use(require("cytoscape-avsdf"));
 
 /////////////////
@@ -19,19 +19,23 @@ cytoscape.use(require("cytoscape-avsdf"));
 /////////////////
 
 export const SchemaGraph = ({
-  baseSchema,
-  nodeColorScale,
-  schema,
+  schema = [],
+  subgraph,
 
-  onSelect,
-  highlightLabel,
+  nodeColor,
+
+  highlight,
+  onFocus,
+  onZoom,
 }: {
-  baseSchema: Schema;
-  nodeColorScale: (label: string) => string;
   schema?: Schema;
+  subgraph?: Schema;
 
-  highlightLabel: string | null | undefined;
-  onSelect: (selection?: NodeSingular | EdgeSingular) => void;
+  nodeColor?: (label: string) => string;
+
+  highlight?: SchemaNode | null | false;
+  onFocus?: (elem: Singular | null) => void;
+  onZoom?: (elem: Singular | null) => void;
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const cyRef = useRef<cytoscape.Core>();
@@ -41,9 +45,7 @@ export const SchemaGraph = ({
     const container = containerRef.current;
     if (!container) return;
 
-    cyRef.current = cytoscape({
-      container: containerRef.current,
-    });
+    cyRef.current = cytoscape({ container });
     cyRef.current.data("isCore", true);
   }, [containerRef.current]);
 
@@ -52,18 +54,19 @@ export const SchemaGraph = ({
     const cy = cyRef.current;
     if (!cy) return;
 
-    const cb = (e: EventObject) => {
-      const target = e.target.data("isCore")
-        ? undefined
-        : (e.target as NodeSingular | EdgeSingular);
-      onSelect?.(target);
-    };
+    const cb = (e: EventObject) => onFocus?.(getTarget(e));
+    cy.on("onetap", cb);
+    return () => void cy.off("onetap", cb);
+  }, [cyRef.current, onFocus]);
 
-    cy.on("tap", cb);
-    return () => {
-      cy.off("tap", cb);
-    };
-  }, [cyRef.current, onSelect]);
+  useEffect(() => {
+    const cy = cyRef.current;
+    if (!cy) return;
+
+    const cb = (e: EventObject) => onZoom?.(getTarget(e));
+    cy.on("dbltap", cb);
+    return () => void cy.off("dbltap", cb);
+  }, [cyRef.current, onZoom]);
 
   // Update stylesheet of graph
   useEffect(() => {
@@ -76,11 +79,14 @@ export const SchemaGraph = ({
           selector: "node",
           style: {
             label: "data(label)",
-            "background-color": (node: NodeSingular) =>
-              nodeColorScale(node.data("label")),
             "border-width": (node: NodeSingular) =>
               node.data("isSelected") ? 3 : 0,
             "border-color": "red",
+
+            ...(nodeColor && {
+              "background-color": (node: NodeSingular) =>
+                nodeColor(node.data("label")),
+            }),
           },
         },
         {
@@ -88,25 +94,26 @@ export const SchemaGraph = ({
           style: {
             "line-cap": "round",
             "line-fill": "linear-gradient",
-            "line-gradient-stop-colors": (edge: EdgeSingular) => [
-              nodeColorScale(edge.source().data("label")),
-              nodeColorScale(edge.target().data("label")),
-            ],
+
+            ...(nodeColor && {
+              "line-gradient-stop-colors": (edge: EdgeSingular) => [
+                nodeColor(edge.source().data("label")),
+                nodeColor(edge.target().data("label")),
+              ],
+            }),
           },
         },
       ],
     });
-  }, [cyRef.current, nodeColorScale]);
+  }, [cyRef.current, nodeColor]);
 
-  // Update elements of base graph
+  // Update schema
   useEffect(() => {
     const cy = cyRef.current;
     if (!cy) return;
 
     // Convert schema graph data into cytoscape data
-    const elements = mergeParallelEdges(
-      mergeNodesByLabel(schemaToCyto(baseSchema))
-    );
+    const elements = mergeParallelEdges(schemaToCyto(schema));
     cy.json({ elements });
 
     // Apply dynamic styles
@@ -117,59 +124,61 @@ export const SchemaGraph = ({
       name: "avsdf",
       nodeSeparation: 160,
     } as AVSDFLayoutOptions).run();
-  }, [cyRef.current, baseSchema]);
+  }, [cyRef.current, useObject(schema)]);
 
-  // Update elements of graph
+  // Update subgraph graph
   useEffect(() => {
     const cy = cyRef.current;
-
     if (!cy) return;
 
-    if (!schema) {
+    if (!subgraph) {
       // Reset subgraph data
-      cy.edges().forEach((edge) => {
-        edge.removeData("children");
-      });
+      cy.edges().forEach((edge) => void edge.removeData("subedges"));
     } else {
       // Initialize subgraph data
-      cy.edges().forEach((edge) => {
-        edge.data("children", []);
-      });
+      cy.edges().forEach((edge) => void edge.data("subedges", []));
 
       // Update graph with data
-      schema.forEach((edge) => {
-        const [src, tgt] = [
-          edge.source.node_label,
-          edge.target.node_label,
-        ].sort();
-        const children = cy
-          .$(
-            `edge[source=${JSON.stringify(src)}][target=${JSON.stringify(tgt)}]`
+      subgraph.forEach((edge) =>
+        cy
+          .nodes(
+            `node[schemaNode.node_property_value=${quote(
+              edge.source.node_label
+            )}]`
           )
-          .data("children");
-        children.push(edge);
-      });
+          .edgesWith(
+            `node[schemaNode.node_property_value=${quote(
+              edge.target.node_label
+            )}]`
+          )
+          .data("subedges")
+          ?.push(edge)
+      );
     }
+
     // Apply dynamic styles
     applyEdgeStyles(cy);
-  }, [cyRef.current, schema]);
+  }, [cyRef.current, useObject(subgraph)]);
 
   // Update the selected node in display
-  const prevLabel = usePrevious(highlightLabel);
+  const prevHighlightRef = useRef<NodeSingular>();
   useEffect(() => {
     const cy = cyRef.current;
     if (!cy) return;
-    if (prevLabel)
-      cy.$(`node[label=${JSON.stringify(prevLabel)}]`).data(
-        "isSelected",
-        false
-      );
-    if (highlightLabel)
-      cy.$(`node[label=${JSON.stringify(highlightLabel)}]`).data(
-        "isSelected",
-        true
-      );
-  }, [cyRef.current, prevLabel, highlightLabel]);
+
+    const prevHighlight = prevHighlightRef.current;
+    if (prevHighlight) {
+      prevHighlight.data("isSelected", false);
+      prevHighlightRef.current = undefined;
+    }
+
+    if (highlight) {
+      const selector = `node[schemaNode.node_property_value="${highlight.node_property_value}"]`;
+      const selection = cy.$(selector);
+      selection.data("isSelected", true);
+      prevHighlightRef.current = selection;
+    }
+  }, [cyRef.current, useObject(highlight)]);
 
   return <Box ref={containerRef} width="100%" height="100%" />;
 };
@@ -178,20 +187,23 @@ export const SchemaGraph = ({
 /// HELPER FUNCTIONS ///
 ////////////////////////
 
+// Extract node and edge data from schema
+const nodeId = (node: SchemaNode) => hash(node);
+const edgeId = (edge: SchemaEdge) => hash(edge);
+
 /**
  *  Convert a schema graph data to cytoscape graph data
  */
 const schemaToCyto = (schema: Schema) => {
-  // Extract node and edge data from schema
-  const nodeId = (node: SchemaNode) => hash(node);
-  const edgeId = (edge: SchemaEdge) => hash(edge);
-  const nodeLabel = (node: SchemaNode) => node.node_label;
-
   // Extract node definitions from schema
-  const nodes: { [id: string]: NodeDefinition & { data: SchemaNode } } = {};
+  const nodes: {
+    [id: string]: NodeDefinition & { data: { schemaNode: SchemaNode } };
+  } = {};
   const makeNode = (node: SchemaNode) => {
     const id = nodeId(node);
-    nodes[id] ??= { data: { id, label: nodeLabel(node), ...node } };
+    nodes[id] ??= {
+      data: { id, label: node.node_property_value, schemaNode: node },
+    };
   };
   schema.forEach((edge) => {
     makeNode(edge.source);
@@ -202,48 +214,24 @@ const schemaToCyto = (schema: Schema) => {
   const edges = schema.map((edge) => ({
     data: {
       id: edgeId(edge),
-      ...edge,
       source: nodeId(edge.source),
       target: nodeId(edge.target),
+      schemaEdge: edge,
     },
   }));
 
   return { nodes: Object.values(nodes), edges };
 };
 
-const mergeNodesByLabel = <E extends ElementsDefinition>(elements: E) => {
-  const nodes: {
-    [label: string]: NodeDefinition;
-  } = {};
-
-  const nodeRemap: {
-    [id: string]: string;
-  } = {};
-
-  elements.nodes.forEach((node) => {
-    const label = node.data.label;
-    const newNode = (nodes[label] ??= {
-      data: { id: label, label },
-    });
-
-    // Save map to new node for remapping edges
-    nodeRemap[node.data.id!] = label;
-  });
-
-  const edges = elements.edges.map((edge) => ({
-    data: {
-      ...edge.data,
-      source: nodeRemap[edge.data.source],
-      target: nodeRemap[edge.data.target],
-    },
-  }));
-
-  return { nodes: Object.values(nodes), edges };
-};
-
-const mergeParallelEdges = <E extends ElementsDefinition>(elements: E) => {
+const mergeParallelEdges = <
+  N extends NodeDefinition,
+  E extends EdgeDefinition
+>(elements: {
+  nodes: N[];
+  edges: E[];
+}) => {
   const mergedEdges: {
-    [key: string]: EdgeDefinition & { data: { edges: E["edges"] } };
+    [key: string]: EdgeDefinition & { data: { children: E["data"][] } };
   } = {};
   elements.edges.forEach((edge) => {
     // Ignore directionality of edge
@@ -256,26 +244,31 @@ const mergeParallelEdges = <E extends ElementsDefinition>(elements: E) => {
         id,
         source,
         target,
-        edges: [],
+        children: [],
       },
     });
-    mergedEdge.data.edges.push(edge);
+    mergedEdge.data.children.push(edge.data);
   });
 
   return {
-    nodes: elements.nodes as E["nodes"],
+    nodes: elements.nodes,
     edges: Object.values(mergedEdges),
   };
 };
 
-export const makeNodeColorScale = (schema: Schema) => {
+export const makeNodeColorScale = (schema?: Schema) => {
   const labels = [
     ...new Set(
-      schema.flatMap((edge) => [edge.source.node_label, edge.target.node_label])
+      schema?.flatMap((edge) => [
+        edge.source.node_label,
+        edge.target.node_label,
+      ])
     ),
   ].sort();
   const colors = labels.map((_, i) => d3.interpolateRainbow(i / labels.length));
-  return d3.scaleOrdinal(colors).domain(labels);
+  const scale = d3.scaleOrdinal(colors).domain(labels);
+
+  return (label?: string) => (label ? scale(label) : "#aaa");
 };
 
 const applyEdgeStyles = (
@@ -287,7 +280,7 @@ const applyEdgeStyles = (
   const { maxEdgeWidth = 30 } = options;
 
   const getParam = (edge: EdgeSingular) =>
-    edge.data("children")?.length ?? edge.data("edges").length;
+    edge.data("subedges")?.length ?? edge.data("children").length;
 
   // Limit the width of any edge to maxEdgeWidth
   const edgeWidthScale = Math.min(
@@ -302,17 +295,25 @@ const applyEdgeStyles = (
   });
 };
 
+const getTarget = (e: EventObject) =>
+  e.target.data("isCore") ? null : (e.target as Singular);
+
+/**
+ * Quote and escape special characters in string
+ */
+const quote = (str: string) => JSON.stringify(str);
+
 /////////////
 /// TYPES ///
 /////////////
 
-type SchemaNode = {
+export type SchemaNode = {
   node_label: string;
   node_property: string;
   node_property_value: string;
 };
 
-type SchemaEdge = {
+export type SchemaEdge = {
   emphasis: "yes" | "no";
   label: string;
   source: SchemaNode;
@@ -349,3 +350,21 @@ interface AVSDFLayoutOptions extends BaseLayoutOptions {
   /** How apart the nodes are. Default: 60 **/
   nodeSeparation?: number;
 }
+
+export type CytoNodeData = {
+  id: string;
+  label: string;
+  schemaNode: SchemaNode;
+};
+export type CytoEdgeData = {
+  id: string;
+  label: string;
+  source: string;
+  target: string;
+  children: {
+    id: string;
+    source: string;
+    target: string;
+    schemaEdge: SchemaEdge;
+  }[];
+};
