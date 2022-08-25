@@ -13,6 +13,7 @@ import { horizontalBarChart, strokeHighlight } from "../components/vega-mixins";
 import { LongBarChart } from "../components/long-bar-chart";
 import { LoadingOverlay } from "../components/loading-overlay";
 import { compareBy } from "../lib/data-utils";
+import deepEqual from "deep-equal";
 
 export const Explorer = () => {
   const [error, setError] = useState<any>();
@@ -26,19 +27,6 @@ export const Explorer = () => {
   const color = useMemo(
     () => makeNodeColorScale(data.schema),
     [useObject(data.schema)]
-  );
-
-  const getNodeFromDatum = useCallback(
-    (datum: { x: string }) => {
-      const { node_label, node_property } = state.focus_node ?? {};
-      const node = {
-        node_label: node_label ?? datum.x,
-        node_property: node_property ?? "title",
-        node_property_value: datum.x,
-      };
-      return node;
-    },
-    [useObject(state.focus_node)]
   );
 
   const debounce = useMemo(() => {
@@ -85,18 +73,19 @@ export const Explorer = () => {
                     bar: {
                       mark: { fill: color(state.focus_node?.node_label) },
                       ...strokeHighlight({
-                        test: {
-                          field: "x",
-                          equal:
-                            (state.focus_panel === "children" &&
-                              state.focus_node?.node_property_value) ||
-                            "",
-                        },
+                        test: "datum.highlight",
                       }),
                     },
                   }),
                 ]}
-                data={data.children?.sort(compareBy((d) => -d.y))}
+                data={data.children
+                  ?.map((d) => ({
+                    ...d,
+                    highlight:
+                      state.focus_panel === "children" &&
+                      deepEqual(d.node, state.focus_node),
+                  }))
+                  .sort(compareBy((d) => -d.y))}
                 signals={{
                   focus: { on: [{ events: "rect:click", update: "datum" }] },
                   zoom: { on: [{ events: "rect:dblclick", update: "datum" }] },
@@ -104,15 +93,11 @@ export const Explorer = () => {
                 signalListeners={{
                   focus: (_, datum: ChildDatum) =>
                     debounce(() =>
-                      actions
-                        .focus(getNodeFromDatum(datum), "children")
-                        .catch(setError)
+                      actions.focus(datum.node, "children").catch(setError)
                     ),
                   zoom: (_, datum: ChildDatum) =>
                     debounce(() =>
-                      actions
-                        .focus(getNodeFromDatum(datum), null)
-                        .catch(setError)
+                      actions.focus(datum.node, null).catch(setError)
                     ),
                 }}
               />
@@ -211,4 +196,5 @@ type RelationDatum = {
 type ChildDatum = {
   x: string;
   y: number;
+  node: any;
 };
