@@ -32,9 +32,8 @@ class Explorer:
 
             if len(self.history) > 1:
                 self.history.pop()
-
-            state = self.history[-1]["state"]
-            yield state
+                state = self.history[-1]["state"]
+                yield state
 
             state["is_loading"] = False
             yield state
