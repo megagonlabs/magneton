@@ -1,49 +1,53 @@
 from ..core.widget import WidgetModel
 from .ReducerWidget import ReducerWidget
-import json
 
 
 class Explorer:
     def __init__(self, actions, schema):
-        def init(state):
+        async def init(state):
             state.is_loading = True
             state.did_init = True
-            yield state
+            await widget.flush()
 
             data = actions["init"](state)
             WidgetModel.dict(state.data).update(data)
             state.is_loading = False
-            yield state
+            await widget.flush()
 
-        def focus(state, node, panel):
+        async def focus(state, node, panel):
             state.focus_node = node
             state.focus_panel = panel
             state.is_loading = True
-            yield state
+            await widget.flush()
 
             data = actions["focus"](state, node, panel)
             WidgetModel.dict(state.data).update(data)
             state.is_loading = False
-            yield state
+            await widget.flush()
 
-        def back(state):
+        async def back(state):
             state.is_loading = True
-            yield state
+            await widget.flush()
 
             if len(self.history) > 1:
                 self.history.pop()
                 state = self.history[-1]["state"]
-                yield state
 
             state["is_loading"] = False
-            yield state
+            await widget.flush()
 
-        self.__widget = ReducerWidget(
+        widget = ReducerWidget(
             "Explorer",
             {"did_init": False, "data": {"schema": schema}},
             {"init": init, "focus": focus, "back": back},
             capture={"init", "focus"},
         )
+
+        # Run init function
+        widget.dispatch("init")
+
+        # Internals
+        self.__widget = widget
 
     @property
     def history(self):
@@ -51,7 +55,7 @@ class Explorer:
 
     @property
     def dispatch(self):
-        return self.__widget.dispatch_sync
+        return self.__widget.__dispatch
 
     @property
     def state(self):

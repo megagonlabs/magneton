@@ -1,5 +1,6 @@
-from inspect import isgenerator
 import json
+
+from kyurem.utils.async_utils import run_coroutine, resolve
 from ..core.widget import WidgetBase, WidgetModel
 
 
@@ -12,7 +13,7 @@ class ReducerWidget(WidgetBase):
 
             def capture_name(name):
                 async def dispatcher(*args, **kwargs):
-                    await self.dispatch(name, *args, **kwargs)
+                    await self.__dispatch(name, *args, **kwargs)
 
                 return dispatcher
 
@@ -25,27 +26,17 @@ class ReducerWidget(WidgetBase):
 
         self.history = []
 
-    def dispatch_sync(self, name, *args, **kwargs):
+    def dispatch(self, name, *args, **kwargs):
+        run_coroutine(self.__dispatch(name, *args, **kwargs))
+
+    async def __dispatch(self, name, *args, **kwargs):
+        # Execute specified action
         result = self.__actions[name](self.model.state, *args, **kwargs)
-        if isgenerator(result):
-            for state in result:
-                self.model.state = state
-        else:
-            self.model.state = result
 
-        if name in self.__capture:
-            self.push_state({"name": name, "args": args, "kwargs": kwargs})
+        # Await if result is a coroutine
+        await resolve(result)
 
-    async def dispatch(self, name, *args, **kwargs):
-        result = self.__actions[name](self.model.state, *args, **kwargs)
-        if isgenerator(result):
-            for state in result:
-                self.model.state = state
-                await self.flush()
-        else:
-            self.model.state = result
-            await self.flush()
-
+        # Record action if specified in capture
         if name in self.__capture:
             self.push_state({"name": name, "args": args, "kwargs": kwargs})
 
