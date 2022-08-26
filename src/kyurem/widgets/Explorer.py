@@ -6,7 +6,6 @@ class Explorer:
     def __init__(self, actions, schema):
         async def init(state):
             state.is_loading = True
-            state.did_init = True
             await widget.flush()
 
             data = actions["init"](state)
@@ -38,7 +37,7 @@ class Explorer:
 
         widget = ReducerWidget(
             "Explorer",
-            {"did_init": False, "data": {"schema": schema}},
+            {"data": {"schema": schema}},
             {"init": init, "focus": focus, "back": back},
             capture={"init", "focus"},
         )

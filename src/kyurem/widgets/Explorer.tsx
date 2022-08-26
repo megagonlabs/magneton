@@ -20,10 +20,6 @@ export const Explorer = () => {
   const { actions, state } = useWidgetModel<Model>();
   const data = state.data;
 
-  useEffect(() => {
-    if (!state.did_init) actions.init().catch(setError);
-  }, []);
-
   const color = useMemo(
     () => makeNodeColorScale(data.schema),
     [useObject(data.schema)]
