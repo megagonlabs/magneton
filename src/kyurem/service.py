@@ -68,23 +68,14 @@ class Service:
             raise Exception(response.text)
         return parsed_result
 
-    def get_children_node_distributions(self, node_type=None, node_property=None, node_property_value=None):
+    def get_children_node_distributions(self, node=None):
         path = self.get_service_endpoint('get_children_node_distributions')
         payload = self.get_base_payload()
 
-        node = {}
-        if node_type:
-            node['node_type'] = node_type
+        if node:
+            payload['node'] = node
         else:
-            node['node_type'] = 'all'
-
-        if node_property:
-            node['node_property'] = node_property
-
-        if node_property_value:
-            node['node_property_value'] = node_property_value
-
-        payload['node'] = node
+            payload['node'] = {'node_label':'all'}
 
         response = get_request(path, json=payload)
         if response.status_code == 200:
@@ -119,6 +110,43 @@ class Service:
         payload = self.get_base_payload()
         payload['node'] = node
         payload['relation'] = relation
+        response = get_request(path, json=payload)
+        if response.status_code == 200:
+            parsed_result = response.json()
+        else:
+            raise Exception(response.text)
+        return parsed_result
+
+    def load_corpus_from_path(self, server_path=None, 
+                              concept=None, context=None, highlight=None):
+        df = pd.read_csv(server_path)
+        data = df.to_dict('records')
+        return self.load_corpus(data, concept, context, highlight)
+
+    def load_corpus(self, data, concept=None, context=None, highlight=None):
+        path = self.get_service_endpoint('load_corpus_from_data')
+        payload = self.get_base_payload()
+        payload['data'] = data
+        if concept:
+            payload['concept'] = concept
+        if context:
+            payload['context'] = context
+        if highlight:
+            payload['highlight'] = highlight
+        response = get_request(path, json=payload)
+        if response.status_code == 200:
+            parsed_result = response.json()
+        else:
+            raise Exception(response.text)
+        return parsed_result
+
+    def get_annotated_corpus(self, node=None):
+        path = self.get_service_endpoint('get_annotated_corpus')
+        payload = self.get_base_payload()
+        if node and node['node_property'] == 'title':
+            payload['nodetitle'] = node['node_property_value']
+        else:
+            payload['nodetitle'] = '*'
         response = get_request(path, json=payload)
         if response.status_code == 200:
             parsed_result = response.json()
