@@ -1,5 +1,5 @@
 from .graph import Graph
-
+import pandas as pd
 
 class Profiler:
 
@@ -7,6 +7,7 @@ class Profiler:
         self.graph = Graph("bolt://{}:7687".format(neo4j_server_url), user,
                            pwd)
         self.name = name
+        self.corpus = pd.DataFrame()
 
     def get_node_distribution(self):
         distribution = self.graph.get_stat_by_node_label()
@@ -61,4 +62,21 @@ class Profiler:
 
     def get_relation_neighborhood(self, node, relation):
         return self.graph.get_sampled_relation_neighborhood_graph_summary(node, relation)
+
+    def load_corpus_from_data(self, data, concept=None, context=None, highlight=None):
+        df = pd.DataFrame(data)
+        if concept and context and highlight:
+            df.rename(
+                columns = {concept:'concept', context:'context', highlight:'highlight'}, 
+                inplace = True)
+            self.corpus = df[['concept', 'context', 'highlight']].copy()
+        else:
+            self.corpus = df.copy()
+
+    def get_corpus_with_annotation(self, nodetitle):
+        if nodetitle=="*":
+            return {"rows": [], "highlight": "*"}
+        df = self.corpus.copy()
+        filtered_df = df[df['highlight'].str.contains(nodetitle)]
+        return {"rows":filtered_df.to_dict('records'), "highlight":nodetitle}
         

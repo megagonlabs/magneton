@@ -6,6 +6,8 @@ SERVICE_ENDPOINTS = {
     'get_edge_list': '/edge_list',
     'get_node_degree_distribution':'/degree_distributions/{nodetype}',
     'get_node_neighborhood':'/node_neighborhood',
-    'get_relation_neighborhood':'/relation_neighborhood'
+    'get_relation_neighborhood':'/relation_neighborhood',
+    'load_corpus_from_data':'/load_corpus_from_data',
+    'get_annotated_corpus':'/get_annotated_corpus'
 }
 REQUEST_TIMEOUT_SECONDS = 15

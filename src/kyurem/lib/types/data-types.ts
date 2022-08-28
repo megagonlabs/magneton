@@ -13,3 +13,9 @@ export type LinkData = {
   target: string;
   weight: number;
 };
+
+export type ContextDatum = {
+  concept: string;
+  context: string;
+  highlight: string;
+};

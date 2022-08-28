@@ -102,15 +102,15 @@ class Graph:
         return dict(sorted(compiled_results.items(), key=lambda item: item[1]))
 
     def get_children_stat_by_node_type_v1(self, node):
-        if node['node_type'] == 'all':
+        if node['node_label'] == 'all':
             return self.get_stat_by_node_label()
 
-        source_label = node['node_type']
+        source_label = node['node_label']
         source_filter = {}
         #source_filter['type'] = 'class'
         source_filter[node['node_property']] = node['node_property_value']
 
-        dest_label = node['node_type']
+        dest_label = node['node_label']
         dest_filter = {}
         #dest_filter['type'] = 'instance'
 
@@ -128,7 +128,6 @@ class Graph:
         full_results = {}
 
         key1 = 'src' if return_node_type == 'source' else 'dest'
-
         # for each immediate children, get their children count
         for child in immediate_children:
             source_filter = {}
@@ -367,7 +366,7 @@ class Graph:
                     "emphasis": "yes"
                 })
             except:
-                print(res)
+                print("datasource node exception handled")
             
         relation_dist = self.get_node_degree_distributions_v1(node_label, 
             node_property, node_property_value)
@@ -409,14 +408,13 @@ class Graph:
                                'node_property_value': res['target'][node_property]}
                 neighborhood_edge_dict[relation_label].append((source_node, target_node))
             except:
-                print(res)
+                print("datasource node exception handled")
             
         relation_dist = self.get_node_degree_distributions_v1(node_label, 
             node_property, node_property_value)
 
         n_sample_drawn = math.ceil(n_sample / len(neighborhood_edge_dict.keys()))
 
-        print(n_sample, n_sample_drawn)
         for key, value in neighborhood_edge_dict.items():
             edge_list = value
             n = min(n_sample_drawn, len(edge_list))
@@ -432,9 +430,6 @@ class Graph:
                             "label": key,
                             "emphasis": "yes"
                         })
-
-        print(len(neighborhood_edge_list))
-        print(neighborhood_edge_list)
 
         return {'schema':neighborhood_edge_list, 'relation_dist': relation_dist}
 
