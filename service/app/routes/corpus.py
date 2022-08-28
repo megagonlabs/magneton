@@ -20,3 +20,15 @@ def get_corpus_with_annotation():
         return make_response('Bad request: \'schemas\' is missing', 400)
     result = g.profile.get_corpus_with_annotation(nodetitle)
     return make_response(jsonify(result), 200)
+
+@app.get('/load_merge_data')
+def load_merge_candidate_data():
+    data = request.json.get('data', None)
+    if data is None:
+        return make_response('Bad request: \'data\' is missing', 400)
+    entity = request.json.get('entity', None)
+    node_label = request.json.get('node_label', None)
+    node_uuid = request.json.get('node_uuid', None)
+    node_title = request.json.get('node_title', None)
+    result = g.profile.load_merge_data(data, entity, node_label, node_uuid, node_title)
+    return make_response(jsonify(result), 200)
