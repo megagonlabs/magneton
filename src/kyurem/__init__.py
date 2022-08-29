@@ -32,4 +32,5 @@ print("kyurem_client: " + VERSION)
 # Export widgets
 from .widgets.Explorer import Explorer
 from .widgets.ExplorerESE import ExplorerESE
+from .widgets.HistoryView import HistoryView
 from .service import Service

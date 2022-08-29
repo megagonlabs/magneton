@@ -1,4 +1,5 @@
 from kyurem.utils.async_utils import run_coroutine
+from kyurem.widgets.HistoryView import HistoryView
 from ..core.widget import WidgetModel
 from .WidgetWithHistory import WidgetWithHistory
 
@@ -91,14 +92,12 @@ class Explorer:
         await widget.flush()
 
     @property
-    def history(self):
-        # Create accessor for convenient debugging
-        return self._widget.history
-
-    @property
     def state(self):
         # Create accessor for convenient debugging
         return self._widget.state
 
     def show(self):
         return self._widget.component()
+
+    def history(self):
+        return HistoryView(self._widget)
