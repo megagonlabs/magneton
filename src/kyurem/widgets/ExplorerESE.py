@@ -1,61 +1,103 @@
+from kyurem.utils.async_utils import run_coroutine
 from ..core.widget import WidgetModel
-from .ReducerWidget import ReducerWidget
+from .WidgetWithHistory import WidgetWithHistory
 import json
 
 
 class ExplorerESE:
     def __init__(self, actions, schema):
-        def init(state):
-            state.is_loading = True
-            state.did_init = True
-            yield state
+        # Initialize Model
+        model = WidgetModel.dotdict()
 
-            data = actions["init"](state)
-            WidgetModel.dict(state.data).update(data)
-            state.is_loading = False
-            yield state
+        model.state = {}
+        model.state.data = {}
+        model.state.data.schema = schema
 
-        def focus(state, node, panel):
-            state.focus_node = node
-            state.focus_panel = panel
-            state.is_loading = True
-            yield state
+        model.actions = {}
+        model.actions.focus = self.focus
+        model.actions.back = self.back
 
-            data = actions["focus"](state, node, panel)
-            WidgetModel.dict(state.data).update(data)
-            state.is_loading = False
-            yield state
+        # Initialize Widget
+        widget = WidgetWithHistory("ExplorerESE", model=model)
 
-        def back(state):
-            state.is_loading = True
-            yield state
+        # Internals
+        self.__widget = widget
+        self.__actions = actions
 
-            if len(self.history) > 1:
-                self.history.pop()
-                state = self.history[-1]["state"]
-                yield state
+        # Initialize Data
+        run_coroutine(self.init())
 
-            state["is_loading"] = False
-            yield state
+    def __update_data(self, data):
+        # Update data in state
+        WidgetModel.dict(self.state.data).update(data)
 
-        self.__widget = ReducerWidget(
-            "ExplorerESE",
-            {"did_init": False, "data": {"schema": schema}},
-            {"init": init, "focus": focus, "back": back},
-            capture={"init", "focus"},
-        )
+    async def init(self):
+        widget = self.__widget
+        state = self.__widget.state
+        actions = self.__actions
+
+        # Set state to loading and render
+        # before fetching data
+        state.is_loading = True
+        await widget.flush()
+
+        # Fetch/update data
+        data = actions["init"](state)
+        self.__update_data(data)
+
+        # Render component with new data
+        state.is_loading = False
+        await widget.flush()
+
+        # Record action+state for provenance
+        widget.push_state(action={"name": "init"})
+
+    async def focus(self, node, panel):
+        widget = self.__widget
+        state = self.__widget.state
+        actions = self.__actions
+
+        # Update interaction state
+        state.focus_node = node
+        state.focus_panel = panel
+
+        # Set state to loading and render
+        # before fetching data
+        state.is_loading = True
+        await widget.flush()
+
+        # Fetch/update data
+        data = actions["focus"](state, node, panel)
+        self.__update_data(data)
+
+        # Render component with new data
+        state.is_loading = False
+        await widget.flush()
+
+        # Record action+state for provenance
+        widget.push_state(action={"name": "focus", "node": node, "panel": panel})
+
+    async def back(self):
+        widget = self.__widget
+
+        widget.state.is_loading = True
+        await widget.flush()
+
+        if len(widget.history) > 1:
+            widget.pop_state()
+
+        widget.state.is_loading = False
+        await widget.flush()
 
     @property
     def history(self):
+        # Create accessor for convenient debugging
         return self.__widget.history
 
     @property
-    def dispatch(self):
-        return self.__widget.dispatch_sync
-
-    @property
     def state(self):
-        return self.__widget.model.state
+        # Create accessor for convenient debugging
+        return self.__widget.state
 
     def show(self):
         return self.__widget.component()
