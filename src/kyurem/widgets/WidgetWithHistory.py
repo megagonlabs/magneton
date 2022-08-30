@@ -35,7 +35,7 @@ class WidgetWithHistory(WidgetBase):
         self.history.append(
             {
                 "action": action,
-                "state": deepcopy(self._model.state, default=WidgetModel.unproxy),
+                "state": deepcopy(self._model.state, replacer=WidgetModel.unproxy),
             }
         )
 
