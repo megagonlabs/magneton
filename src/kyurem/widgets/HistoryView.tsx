@@ -1,19 +1,7 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useState } from "react";
 import { Pane } from "../components/panes/pane";
 import { useWidgetModel } from "../core/widget";
-import {
-  CytoNodeData,
-  makeNodeColorScale,
-  Schema,
-  SchemaGraph,
-  SchemaNode,
-} from "../components/schema-graph";
-import { useObject } from "../lib/use-object";
-import { horizontalBarChart, strokeHighlight } from "../components/vega-mixins";
-import { LongBarChart } from "../components/long-bar-chart";
 import { LoadingOverlay } from "../components/loading-overlay";
-import { compareBy } from "../lib/data-utils";
-import deepEqual from "deep-equal";
 import {
   Box,
   Button,
@@ -23,6 +11,7 @@ import {
   TableHead,
   TableRow,
 } from "@mui/material";
+import { printObject } from "../lib/utils";
 
 export const HistoryView = () => {
   const [error, setError] = useState<any>();
@@ -37,6 +26,7 @@ export const HistoryView = () => {
               <TableRow>
                 <TableCell>Action</TableCell>
                 <TableCell>State</TableCell>
+                <TableCell />
               </TableRow>
             </TableHead>
             <TableBody>
@@ -44,6 +34,9 @@ export const HistoryView = () => {
                 <TableRow key={i}>
                   <TableCell>
                     <pre>{JSON.stringify(entry.action, null, 2)}</pre>
+                  </TableCell>
+                  <TableCell>
+                    <pre>{printObject(entry.state, 3)}</pre>
                   </TableCell>
                   <TableCell>
                     {state.active_index === i ? (

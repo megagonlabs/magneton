@@ -13,7 +13,7 @@ import { horizontalBarChart, strokeHighlight } from "../components/vega-mixins";
 import { LongBarChart } from "../components/long-bar-chart";
 import { LoadingOverlay } from "../components/loading-overlay";
 import { ContextTable } from "../components/data-table";
-import { compareBy } from "../lib/data-utils";
+import { compareBy } from "../lib/utils";
 import { ContextDatum } from "../lib/types/data-types";
 import deepEqual from "deep-equal";
 

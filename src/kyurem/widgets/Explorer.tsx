@@ -12,7 +12,7 @@ import { useObject } from "../lib/use-object";
 import { horizontalBarChart, strokeHighlight } from "../components/vega-mixins";
 import { LongBarChart } from "../components/long-bar-chart";
 import { LoadingOverlay } from "../components/loading-overlay";
-import { compareBy } from "../lib/data-utils";
+import { compareBy } from "../lib/utils";
 import deepEqual from "deep-equal";
 
 export const Explorer = () => {
