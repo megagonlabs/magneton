@@ -25,9 +25,9 @@ export const HistoryView = () => {
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Action</TableCell>
-                <TableCell>State</TableCell>
-                <TableCell />
+                <TableCell width="45%" >Action</TableCell>
+                <TableCell width="45%" >State</TableCell>
+                <TableCell width="10%" />
               </TableRow>
             </TableHead>
             <TableBody>
