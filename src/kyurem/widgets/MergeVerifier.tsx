@@ -76,7 +76,7 @@ export const MergeVerifier = () => {
           <SchemaGraph
             nodeColor={color}
             subgraph={data.subgraph}
-            highlight={state.focus_panel === "schema" && state.focus_node}
+            highlight={state.focus_panel === "schema" && state.focus_row}
           />
         </Pane>
       )}
@@ -91,7 +91,7 @@ export const MergeVerifier = () => {
 type Model = {
   actions: {
     init(): Promise<void>;
-    focus(node: SchemaNode | null, panel: string | null): Promise<void>;
+    focus(row: MergeDatum | null, panel: string | null): Promise<void>;
     back(): Promise<void>;
   };
 
@@ -99,7 +99,7 @@ type Model = {
     did_init?: boolean;
     is_loading?: boolean;
 
-    focus_node?: SchemaNode;
+    focus_row?: MergeDatum;
     focus_panel?: string;
 
     data: {

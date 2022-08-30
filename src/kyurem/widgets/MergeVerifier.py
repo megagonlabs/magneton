@@ -54,13 +54,13 @@ class MergeVerifier:
         # Record action+state for provenance
         widget.push_state(action={"name": "init"})
 
-    async def focus(self, node, panel):
+    async def focus(self, row, panel):
         widget = self._widget
         state = self._widget.state
         actions = self._actions
 
         # Update interaction state
-        state.focus_node = node
+        state.focus_row = row
         state.focus_panel = panel
 
         # Set state to loading and render
@@ -69,7 +69,7 @@ class MergeVerifier:
         await widget.flush()
 
         # Fetch/update data
-        data = actions["focus"](state, node, panel)
+        data = actions["focus"](state, row, panel)
         self.__update_data(data)
 
         # Render component with new data
@@ -77,7 +77,7 @@ class MergeVerifier:
         await widget.flush()
 
         # Record action+state for provenance
-        widget.push_state(action={"name": "focus", "node": node, "panel": panel})
+        widget.push_state(action={"name": "focus", "row": row, "panel": panel})
 
     async def back(self):
         widget = self._widget
