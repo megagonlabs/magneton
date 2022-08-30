@@ -25,8 +25,8 @@ export const HistoryView = () => {
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell width="45%" >Action</TableCell>
-                <TableCell width="45%" >State</TableCell>
+                <TableCell width="45%">Action</TableCell>
+                <TableCell width="45%">State</TableCell>
                 <TableCell width="10%" />
               </TableRow>
             </TableHead>
@@ -34,7 +34,7 @@ export const HistoryView = () => {
               {state.history?.map((entry, i) => (
                 <TableRow key={i}>
                   <TableCell>
-                    <pre>{JSON.stringify(entry.action, null, 2)}</pre>
+                    <ObjectExplorer value={entry.action} />
                   </TableCell>
                   <TableCell>
                     <ObjectExplorer value={entry.state} />
