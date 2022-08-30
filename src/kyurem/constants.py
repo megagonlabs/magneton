@@ -9,6 +9,7 @@ SERVICE_ENDPOINTS = {
     'get_relation_neighborhood':'/relation_neighborhood',
     'load_corpus_from_data':'/load_corpus_from_data',
     'get_annotated_corpus':'/get_annotated_corpus',
-    'load_merge_data':'/load_merge_data'
+    'load_merge_data':'/load_merge_data',
+    'get_merge_data':'/get_merge_data'
 }
 REQUEST_TIMEOUT_SECONDS = 15

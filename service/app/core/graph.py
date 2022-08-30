@@ -9,6 +9,7 @@ class Graph:
 
     def __init__(self, uri, username, password):
         try:
+            uri = 'bolt://3.140.255.241:7687'
             neo4j_user = username
             neo4j_pwd = password
             self.neo4j_conn = Database(uri, neo4j_user, neo4j_pwd)

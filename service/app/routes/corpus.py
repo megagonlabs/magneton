@@ -32,3 +32,8 @@ def load_merge_candidate_data():
     node_title = request.json.get('node_title', None)
     result = g.profile.load_merge_data(data, entity, node_label, node_uuid, node_title)
     return make_response(jsonify(result), 200)
+
+@app.get('/get_merge_data')
+def get_merge_candidate_data():
+    result = g.profile.get_merge_data()
+    return make_response(jsonify(result), 200)

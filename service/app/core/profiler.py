@@ -85,9 +85,13 @@ class Profiler:
         df = pd.DataFrame(data)
         if entity and node_uuid and node_title:
             df.rename(
-                columns = {entity:'entity', node_label:'node_label', node_uuid:'node_uuid', node_title:'node_title'}, 
+                columns = {entity:'entity', node_label:'node_label', node_uuid:'node_uuid', node_title:'node'}, 
                 inplace = True)
-            self.merged = df[['entity', 'node_label', 'node_uuid', 'node_title']].copy()
+            self.merged = df[['entity', 'node_label', 'node_uuid', 'node']].copy()
         else:
             self.merged = df.copy()
+
+    def get_merge_data(self):
+        df = self.merged.copy()
+        return {"rows":df.to_dict('records')}
         
