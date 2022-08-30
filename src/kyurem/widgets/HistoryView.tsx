@@ -12,6 +12,7 @@ import {
   TableRow,
 } from "@mui/material";
 import { printObject } from "../lib/utils";
+import { ObjectExplorer } from "../components/object-explorer";
 
 export const HistoryView = () => {
   const [error, setError] = useState<any>();
@@ -36,7 +37,7 @@ export const HistoryView = () => {
                     <pre>{JSON.stringify(entry.action, null, 2)}</pre>
                   </TableCell>
                   <TableCell>
-                    <pre>{printObject(entry.state, 3)}</pre>
+                    <ObjectExplorer value={entry.state} />
                   </TableCell>
                   <TableCell>
                     {state.active_index === i ? (
