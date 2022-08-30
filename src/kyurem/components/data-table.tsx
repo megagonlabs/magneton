@@ -39,19 +39,15 @@ export const ContextTable = <D extends ContextDatum>({
 
   return (
     <TableContainer component={Paper}>
-      <Table sx={{ minWidth: 700 }} aria-label="customized table">
+      <Table sx={{ minWidth: 400 }} aria-label="customized table">
         <TableHead>
           <TableRow>
-            <StyledTableCell>Concept</StyledTableCell>
             <StyledTableCell>Context</StyledTableCell>
           </TableRow>
         </TableHead>
         <TableBody>
-          {rows.map((row) => (
-            <StyledTableRow key={row.concept}>
-              <StyledTableCell component="th" scope="row">
-                {row.concept}
-              </StyledTableCell>
+          {rows.map((row, i) => (
+            <StyledTableRow key={i}>
               <StyledTableCell>
                 <HighlightedText text={row.context} highlight={highlight} />
               </StyledTableCell>

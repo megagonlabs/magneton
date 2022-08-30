@@ -90,6 +90,7 @@ class Profiler:
             self.merged = df[['entity', 'node_label', 'node_uuid', 'node']].copy()
         else:
             self.merged = df.copy()
+        self.merged["decision"] = "---"
 
     def get_merge_data(self):
         df = self.merged.copy()

@@ -8,6 +8,7 @@ import {
   SchemaGraph,
   SchemaNode,
 } from "../components/schema-graph";
+import { ContextTable } from "../components/data-table";
 import { useObject } from "../lib/use-object";
 import { horizontalBarChart, strokeHighlight } from "../components/vega-mixins";
 import { LongBarChart } from "../components/long-bar-chart";
@@ -18,6 +19,8 @@ import deepEqual from "deep-equal";
 import {
   Box,
   Button,
+  MenuItem,
+  Select,
   Table,
   TableBody,
   TableCell,
@@ -59,25 +62,42 @@ export const MergeVerifier = () => {
                         {entry.node}
                       </Button>
                   </TableCell>
-                  <TableCell>Accept/Reject/Defer</TableCell>
+                  <TableCell>
+                    <Select
+                      labelId="demo-simple-select-label"
+                      id="demo-simple-select"
+                      value={entry.decision}
+                      label="decision"
+                      onChange={(event: SelectChangeEvent) => {data.mergedata[i].decision = event.target.value;}}
+                    > 
+                      {data.decisions?.map((d) => (
+                        <MenuItem value={d}>{d}</MenuItem>
+                      ))}
+                    </Select>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </Box>
       </Pane>
-      {data.corpus && (
-        <Pane>
-          <ContextTable rows={data.corpus} highlight={data.highlight}/>
-        </Pane>
-      )}
-      {data.subgraph && (
-        <Pane>
-          <SchemaGraph
-            nodeColor={color}
-            subgraph={data.subgraph}
-            highlight={state.focus_panel === "schema" && state.focus_row}
-          />
+      {(data.corpus || data.subgraph) && (
+        <Pane direction="row">
+          {data.corpus && (
+            <Pane>
+              <ContextTable rows={data.corpus} highlight={data.highlight}/>
+            </Pane>
+          )}
+          {data.subgraph && (
+            <Pane>
+              <SchemaGraph
+                schema={data.subgraph}
+                nodeColor={makeNodeColorScale(data.subgraph)}
+                subgraph={data.subgraph}
+                highlight={state.focus_panel === "schema" && state.focus_row}
+              />
+            </Pane>
+          )}
         </Pane>
       )}
     </LoadingOverlay>
@@ -104,8 +124,9 @@ type Model = {
 
     data: {
       mergedata?: MergeDatum[];
-      corpus?:MergeDatum[];
+      corpus?: MergeDatum[] | null;
       subgraph?: Schema;
+      decisions?: string[]; 
     };
   };
 };
