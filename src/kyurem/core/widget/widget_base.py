@@ -211,7 +211,7 @@ async def _call_capture(func, args):
         if iscoroutine(value):
             value = await value
     except Exception as e:
-        error = e.args[0] + "\n" + "".join(format_tb(e.__traceback__))
+        error = str(e) + "\n" + "".join(format_tb(e.__traceback__))
 
     return value, error
 

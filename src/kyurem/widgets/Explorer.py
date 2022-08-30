@@ -1,10 +1,11 @@
 from kyurem.utils.async_utils import run_coroutine
+from kyurem.widgets.HistoryView import HistoryView
 from ..core.widget import WidgetModel
 from .WidgetWithHistory import WidgetWithHistory
 
 
 class Explorer:
-    def __init__(self, actions, schema):
+    def __init__(self, actions, schema, component_name="Explorer"):
 
         # Initialize Model
         model = WidgetModel.dotdict()
@@ -18,11 +19,12 @@ class Explorer:
         model.actions.back = self.back
 
         # Initialize Widget
-        widget = WidgetWithHistory("Explorer", model=model)
+        widget = WidgetWithHistory(component_name, model=model)
 
         # Internals
-        self.__widget = widget
-        self.__actions = actions
+        self._model = model
+        self._widget = widget
+        self._actions = actions
 
         # Initialize Data
         run_coroutine(self.init())
@@ -32,9 +34,9 @@ class Explorer:
         WidgetModel.dict(self.state.data).update(data)
 
     async def init(self):
-        widget = self.__widget
-        state = self.__widget.state
-        actions = self.__actions
+        widget = self._widget
+        state = self._widget.state
+        actions = self._actions
 
         # Set state to loading and render
         # before fetching data
@@ -53,9 +55,9 @@ class Explorer:
         widget.push_state(action={"name": "init"})
 
     async def focus(self, node, panel):
-        widget = self.__widget
-        state = self.__widget.state
-        actions = self.__actions
+        widget = self._widget
+        state = self._widget.state
+        actions = self._actions
 
         # Update interaction state
         state.focus_node = node
@@ -78,7 +80,7 @@ class Explorer:
         widget.push_state(action={"name": "focus", "node": node, "panel": panel})
 
     async def back(self):
-        widget = self.__widget
+        widget = self._widget
 
         widget.state.is_loading = True
         await widget.flush()
@@ -90,14 +92,12 @@ class Explorer:
         await widget.flush()
 
     @property
-    def history(self):
-        # Create accessor for convenient debugging
-        return self.__widget.history
-
-    @property
     def state(self):
         # Create accessor for convenient debugging
-        return self.__widget.state
+        return self._widget.state
 
     def show(self):
-        return self.__widget.component()
+        return self._widget.component()
+
+    def history(self):
+        return HistoryView(self._widget)
