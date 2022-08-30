@@ -1,61 +1,103 @@
+from kyurem.utils.async_utils import run_coroutine
+from kyurem.widgets.HistoryView import HistoryView
 from ..core.widget import WidgetModel
-from .ReducerWidget import ReducerWidget
-import json
+from .WidgetWithHistory import WidgetWithHistory
 
 
 class Explorer:
-    def __init__(self, actions, schema):
-        def init(state):
-            state.is_loading = True
-            state.did_init = True
-            yield state
+    def __init__(self, actions, schema, component_name="Explorer"):
 
-            data = actions["init"](state)
-            WidgetModel.dict(state.data).update(data)
-            state.is_loading = False
-            yield state
+        # Initialize Model
+        model = WidgetModel.dotdict()
 
-        def focus(state, node, panel):
-            state.focus_node = node
-            state.focus_panel = panel
-            state.is_loading = True
-            yield state
+        model.state = {}
+        model.state.data = {}
+        model.state.data.schema = schema
 
-            data = actions["focus"](state, node, panel)
-            WidgetModel.dict(state.data).update(data)
-            state.is_loading = False
-            yield state
+        model.actions = {}
+        model.actions.focus = self.focus
+        model.actions.back = self.back
 
-        def back(state):
-            state.is_loading = True
-            yield state
+        # Initialize Widget
+        widget = WidgetWithHistory(component_name, model=model)
 
-            if len(self.history) > 1:
-                self.history.pop()
-                state = self.history[-1]["state"]
-                yield state
+        # Internals
+        self._model = model
+        self._widget = widget
+        self._actions = actions
 
-            state["is_loading"] = False
-            yield state
+        # Initialize Data
+        run_coroutine(self.init())
 
-        self.__widget = ReducerWidget(
-            "Explorer",
-            {"did_init": False, "data": {"schema": schema}},
-            {"init": init, "focus": focus, "back": back},
-            capture={"init", "focus"},
-        )
+    def __update_data(self, data):
+        # Update data in state
+        WidgetModel.dict(self.state.data).update(data)
 
-    @property
-    def history(self):
-        return self.__widget.history
+    async def init(self):
+        widget = self._widget
+        state = self._widget.state
+        actions = self._actions
 
-    @property
-    def dispatch(self):
-        return self.__widget.dispatch_sync
+        # Set state to loading and render
+        # before fetching data
+        state.is_loading = True
+        await widget.flush()
+
+        # Fetch/update data
+        data = actions["init"](state)
+        self.__update_data(data)
+
+        # Render component with new data
+        state.is_loading = False
+        await widget.flush()
+
+        # Record action+state for provenance
+        widget.push_state(action={"name": "init"})
+
+    async def focus(self, node, panel):
+        widget = self._widget
+        state = self._widget.state
+        actions = self._actions
+
+        # Update interaction state
+        state.focus_node = node
+        state.focus_panel = panel
+
+        # Set state to loading and render
+        # before fetching data
+        state.is_loading = True
+        await widget.flush()
+
+        # Fetch/update data
+        data = actions["focus"](state, node, panel)
+        self.__update_data(data)
+
+        # Render component with new data
+        state.is_loading = False
+        await widget.flush()
+
+        # Record action+state for provenance
+        widget.push_state(action={"name": "focus", "node": node, "panel": panel})
+
+    async def back(self):
+        widget = self._widget
+
+        widget.state.is_loading = True
+        await widget.flush()
+
+        if len(widget.history) > 1:
+            widget.pop_state()
+
+        widget.state.is_loading = False
+        await widget.flush()
 
     @property
     def state(self):
-        return self.__widget.model.state
+        # Create accessor for convenient debugging
+        return self._widget.state
 
     def show(self):
-        return self.__widget.component()
+        return self._widget.component()
+
+    def history(self):
+        return HistoryView(self._widget)

@@ -1,13 +1,12 @@
-import asyncio
 from collections import defaultdict
-from traceback import format_exception, format_stack, format_tb
+from traceback import format_tb
 from typing import Any, Callable, Dict, Mapping, List, TypedDict, Union
 import idom
 from idom import component, use_effect, use_memo, use_state
 from shortuuid import uuid
 from .widget_model import WidgetModel
 from ..idom_loader import load_component
-from asyncio import Future, get_running_loop, iscoroutinefunction
+from asyncio import Future, get_running_loop, iscoroutine
 
 
 class WidgetBase:
@@ -34,13 +33,14 @@ class WidgetBase:
         self.__model = WidgetModel.proxy(model)
 
     # Helper functions for 2-way communication with component
-    def __recv_message(self, type, payload, component_id):
+    async def __recv_message(self, data):
         """
         Handles messages sent from the component.
 
         Do not call this function directly. This function is automatically
         called when a "message" event is sent from the component.
         """
+        type, payload, component_id = data
 
         if type == "message_ack":
             # Remove acknowledged messages
@@ -65,15 +65,7 @@ class WidgetBase:
 
             func = WidgetModel.get(self.__model, path)
 
-            if iscoroutinefunction(func):
-                # Special logic for async functions
-                _exec_async(
-                    _async_call_no_throw(
-                        func, args, lambda result: self.send_message(return_id, result)
-                    )
-                )
-            else:
-                self.send_message(return_id, _call_no_throw(func, args))
+            self.send_message(return_id, await _call_capture(func, args))
 
         # Notify any additional message receivers
         if type in self.__receivers:
@@ -120,7 +112,7 @@ class WidgetBase:
         update = self.__updaters[component_id]
         update()
 
-    def flush(self):
+    async def flush(self):
         cb_id = uuid()
         component_ids = set(self.__component_ids)
 
@@ -141,7 +133,7 @@ class WidgetBase:
         for component_id in self.__component_ids:
             self.__update(component_id)
 
-        return future
+        await future
 
     @component
     def component(self):
@@ -202,48 +194,26 @@ class WidgetBase:
             },
             event_handlers={
                 "message": idom.core.events.EventHandler(
-                    lambda data: self.__recv_message(data[0], data[1], data[2]),
+                    self.__recv_message,
                     target="message",
                 )
             },
         )
 
 
-def _call_no_throw(func, args):
+async def _call_capture(func, args):
     """
-    Call given function, but catch any errors and return as tuple
+    Call given function, but catch and return any errors
     """
+    error = value = None
     try:
         value = func(*args)
-        error = None
+        if iscoroutine(value):
+            value = await value
     except Exception as e:
-        value = None
-        error = e.args[0] + "\n" + "".join(format_tb(e.__traceback__))
+        error = str(e) + "\n" + "".join(format_tb(e.__traceback__))
 
     return value, error
-
-
-async def _async_call_no_throw(func, args, cb):
-    """
-    Call given async function, but catch any errors and return as tuple
-    """
-    try:
-        value = await func(*args)
-        error = None
-    except Exception as e:
-        value = None
-        error = e.args[0] + "\n" + "".join(format_tb(e.__traceback__))
-
-    result = (value, error)
-    cb(result)
-
-
-def _exec_async(coro):
-    try:
-        loop = get_running_loop()
-        asyncio.run_coroutine_threadsafe(coro, loop)
-    except RuntimeError:
-        asyncio.run(coro)
 
 
 class _Message(TypedDict):

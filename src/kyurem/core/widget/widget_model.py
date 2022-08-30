@@ -25,11 +25,15 @@ class Observable:
 
 class WidgetModel(ABC):
     @staticmethod
-    def dict(target={}):
+    def dict(target=None):
+        if target is None:
+            target = {}
         return DictProxy(WidgetModel.unproxy(target))
 
     @staticmethod
-    def dotdict(target={}):
+    def dotdict(target=None):
+        if target is None:
+            target = {}
         return DotDictProxy(WidgetModel.unproxy(target))
 
     _is_widget_model = None
