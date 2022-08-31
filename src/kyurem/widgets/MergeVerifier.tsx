@@ -93,7 +93,6 @@ export const MergeVerifier = () => {
               <SchemaGraph
                 schema={data.subgraph}
                 nodeColor={makeNodeColorScale(data.subgraph)}
-                subgraph={data.subgraph}
                 highlight={state.focus_panel === "schema" && state.focus_row}
               />
             </Pane>
