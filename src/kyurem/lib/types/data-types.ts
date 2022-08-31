@@ -19,3 +19,10 @@ export type ContextDatum = {
   context: string;
   highlight: string;
 };
+
+export type MergeDatum = {
+  entity: string;
+  node_label: string;
+  node_uuid: string;
+  node: string;
+};

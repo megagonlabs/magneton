@@ -153,3 +153,38 @@ class Service:
         else:
             raise Exception(response.text)
         return parsed_result
+
+    def load_merge_data_from_path(self, server_path=None, 
+                              entity=None, node_uuid=None, node_title=None):
+        df = pd.read_csv(server_path)
+        data = df.to_dict('records')
+        return self.load_corpus(data, entity, node_uuid, node_title)
+
+    def load_merge_data(self, data, entity=None, node_label=None, node_uuid=None, node_title=None):
+        path = self.get_service_endpoint('load_merge_data')
+        payload = self.get_base_payload()
+        payload['data'] = data
+        if entity:
+            payload['entity'] = entity
+        if node_label:
+            payload['node_label'] = node_label
+        if node_uuid:
+            payload['node_uuid'] = node_uuid
+        if node_title:
+            payload['node_title'] = node_title
+        response = get_request(path, json=payload)
+        if response.status_code == 200:
+            parsed_result = response.json()
+        else:
+            raise Exception(response.text)
+        return parsed_result
+
+    def get_merge_data(self, node=None):
+        path = self.get_service_endpoint('get_merge_data')
+        payload = self.get_base_payload()
+        response = get_request(path, json=payload)
+        if response.status_code == 200:
+            parsed_result = response.json()
+        else:
+            raise Exception(response.text)
+        return parsed_result
