@@ -76,7 +76,7 @@ class Explorer:
 
     def export_selection(self):
         model = self.__base.model
-        print(model.t_state.selection)
+        return WidgetModel.unproxy(model.t_state.selection)
 
     def history(self):
         return HistoryView(self.__base)
