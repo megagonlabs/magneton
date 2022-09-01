@@ -87,7 +87,7 @@ export const SchemaGraph = ({
 
           ...(nodeColor && {
             "background-color": (node: NodeSingular) =>
-              nodeColor(node.data("label")),
+              nodeColor(node.data("schemaNode").node_label),
           }),
         },
       },
@@ -115,11 +115,11 @@ export const SchemaGraph = ({
 
           ...(nodeColor && {
             "target-arrow-color": (edge: EdgeSingular) =>
-              nodeColor(edge.target().data("label")),
+              nodeColor(edge.target().data("schemaNode").node_label),
             "line-fill": "linear-gradient",
             "line-gradient-stop-colors": ((edge: EdgeSingular) => [
-              nodeColor(edge.source().data("label")),
-              nodeColor(edge.target().data("label")),
+              nodeColor(edge.source().data("schemaNode").node_label),
+              nodeColor(edge.target().data("schemaNode").node_label),
             ]) as any,
           }),
         },
