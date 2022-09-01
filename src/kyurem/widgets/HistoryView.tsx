@@ -11,7 +11,6 @@ import {
   TableHead,
   TableRow,
 } from "@mui/material";
-import { printObject } from "../lib/utils";
 import { ObjectExplorer } from "../components/object-explorer";
 
 export const HistoryView = () => {

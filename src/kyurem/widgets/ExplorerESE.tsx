@@ -42,16 +42,15 @@ export const ExplorerESE = () => {
           <SchemaGraph
             schema={data.schema}
             nodeColor={color}
-            subgraph={data.subgraph}
-            highlight={state.focus_panel === "schema" && state.focus_node}
-            onFocus={(node) => {
+            focused={state.focus_panel === "schema" && state.focus_node}
+            onClick={(node) => {
               if (!node) {
               } else if (node.isNode()) {
                 const data = node.data() as CytoNodeData;
                 actions.focus(data.schemaNode, "schema").catch(setError);
               }
             }}
-            onZoom={(node) => {
+            onDblClick={(node) => {
               if (!node) {
                 actions.back().catch(setError);
               } else if (node.isNode()) {
@@ -154,7 +153,7 @@ export const ExplorerESE = () => {
       </Pane>
       {data.datatable && (
         <Pane>
-          <ContextTable rows={data.datatable} highlight={data.highlight}/>
+          <ContextTable rows={data.datatable} highlight={data.highlight} />
         </Pane>
       )}
     </LoadingOverlay>

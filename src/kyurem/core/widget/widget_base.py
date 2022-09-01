@@ -112,7 +112,7 @@ class WidgetBase:
         update = self.__updaters[component_id]
         update()
 
-    async def flush(self):
+    def flush(self):
         cb_id = uuid()
         component_ids = set(self.__component_ids)
 
@@ -133,7 +133,7 @@ class WidgetBase:
         for component_id in self.__component_ids:
             self.__update(component_id)
 
-        await future
+        return future
 
     @component
     def component(self):

@@ -1,39 +1,37 @@
-from ..core.widget import WidgetModel
-from .WidgetWithHistory import WidgetBase, WidgetWithHistory
-from ..utils.mdump import mdump
+from kyurem.widgets.StatefulWidgetBase import StatefulWidgetBase
 
 
 class HistoryView:
-    def __init__(self, target: WidgetWithHistory):
+    def __init__(self, target: StatefulWidgetBase):
+        # Initialize base widget
+        base = StatefulWidgetBase("HistoryView")
 
-        # Initialize Model
-        model = WidgetModel.dotdict()
+        # Listen/sync when history changes
+        # TODO: Remove listeners when appropriate
+        # to avoid possible memory leaks
+        target.on_pop_state(self.__sync)
+        target.on_push_state(self.__sync)
 
-        model.state = {}
-        model.state.history = target.history
-        model.state.active_index = target.active_index
+        # Register actions
+        base.define_action(self.restore_state)
 
-        model.actions = {}
-        model.actions.restore_state = self.restore_state
+        # Initialize internals
+        self.__base = base
+        self.__target = target
 
-        # Initialize Widget
-        widget = WidgetBase("Provenance", model=model)
+        # Sync model with target
+        self.__sync()
 
-        # Update state when target changes
-        def cb():
-            model.state.history = target.history
-            model.state.active_index = target.active_index
+    def __sync(self):
+        """
+        Synchronize model with target, i.e. copy history and current index
+        """
+        base, target = self.__base, self.__target
+        base.state.history = target.history
+        base.state.active_index = target.current_index
 
-        target.on_change(cb)
-
-        # Internals
-        self._model = model
-        self._widget = widget
-        self._target = target
-
-    async def restore_state(self, i):
-        self._target.restore_state(i)
-        await self._target.flush()
+    def restore_state(self, i: int):
+        self.__target.pop_state(i)
 
     def show(self):
-        return self._widget.component()
+        return self.__base.component()
