@@ -1,4 +1,3 @@
-from kyurem.utils.async_utils import run_coroutine
 from kyurem.widgets.Explorer import Explorer
 
 

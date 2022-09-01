@@ -12,12 +12,12 @@ import { useObject } from "../lib/use-object";
 import { horizontalBarChart, strokeHighlight } from "../components/vega-mixins";
 import { LongBarChart } from "../components/long-bar-chart";
 import { LoadingOverlay } from "../components/loading-overlay";
-import { compareBy } from "../lib/data-utils";
+import { compareBy } from "../lib/utils";
 import deepEqual from "deep-equal";
 
 export const Explorer = () => {
   const [error, setError] = useState<any>();
-  const { actions, state } = useWidgetModel<Model>();
+  const { actions, state, t_state } = useWidgetModel<Model>();
   const data = state.data;
 
   const color = useMemo(
@@ -34,22 +34,28 @@ export const Explorer = () => {
   }, []);
 
   return (
-    <LoadingOverlay loading={state.is_loading} error={error}>
+    <LoadingOverlay loading={t_state.is_loading} error={error}>
       <Pane initialHeight={800}>
         <Pane>
           <SchemaGraph
             schema={data.schema}
             nodeColor={color}
-            subgraph={data.subgraph}
-            highlight={state.focus_panel === "schema" && state.focus_node}
-            onFocus={(node) => {
+            selected={t_state.selection}
+            focused={state.focus_panel === "schema" && state.focus_node}
+            onClick={(node, ev) => {
               if (!node) {
               } else if (node.isNode()) {
                 const data = node.data() as CytoNodeData;
-                actions.focus(data.schemaNode, "schema").catch(setError);
+                if (ev.ctrlKey) {
+                  // Ctrl + Click = Select
+                  actions.select(data.schemaNode).catch(setError);
+                } else {
+                  // Primary Click = Focus
+                  actions.focus(data.schemaNode, "schema").catch(setError);
+                }
               }
             }}
-            onZoom={(node) => {
+            onDblClick={(node) => {
               if (!node) {
                 actions.back().catch(setError);
               } else if (node.isNode()) {
@@ -162,16 +168,13 @@ type Model = {
   actions: {
     init(): Promise<void>;
     focus(node: SchemaNode | null, panel: string | null): Promise<void>;
+    select(node: SchemaNode): Promise<void>;
     back(): Promise<void>;
   };
 
   state: {
-    did_init?: boolean;
-    is_loading?: boolean;
-
     focus_node?: SchemaNode;
     focus_panel?: string;
-
     relation?: { type: string; direction?: string };
 
     data: {
@@ -180,6 +183,11 @@ type Model = {
       children?: ChildDatum[];
       relations?: RelationDatum[];
     };
+  };
+
+  t_state: {
+    is_loading?: boolean;
+    selection: SchemaNode[];
   };
 };
 

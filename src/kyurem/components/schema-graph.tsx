@@ -20,22 +20,21 @@ cytoscape.use(require("cytoscape-avsdf"));
 
 export const SchemaGraph = ({
   schema = [],
-  subgraph,
-
   nodeColor,
 
-  highlight,
-  onFocus,
-  onZoom,
+  selected,
+  focused,
+  onClick,
+  onDblClick,
 }: {
   schema?: Schema;
-  subgraph?: Schema;
 
   nodeColor?: (label: string) => string;
 
-  highlight?: SchemaNode | null | false;
-  onFocus?: (elem: Singular | null) => void;
-  onZoom?: (elem: Singular | null) => void;
+  selected?: SchemaNode[];
+  focused?: SchemaNode | null | false;
+  onClick?: (elem: Singular | null, event: MouseEvent) => void;
+  onDblClick?: (elem: Singular | null, event: MouseEvent) => void;
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const cyRef = useRef<cytoscape.Core>();
@@ -54,19 +53,19 @@ export const SchemaGraph = ({
     const cy = cyRef.current;
     if (!cy) return;
 
-    const cb = (e: EventObject) => onFocus?.(getTarget(e));
+    const cb = (e: EventObject) => onClick?.(getTarget(e), e.originalEvent);
     cy.on("onetap", cb);
     return () => void cy.off("onetap", cb);
-  }, [cyRef.current, onFocus]);
+  }, [cyRef.current, onClick]);
 
   useEffect(() => {
     const cy = cyRef.current;
     if (!cy) return;
 
-    const cb = (e: EventObject) => onZoom?.(getTarget(e));
+    const cb = (e: EventObject) => onDblClick?.(getTarget(e), e.originalEvent);
     cy.on("dbltap", cb);
     return () => void cy.off("dbltap", cb);
-  }, [cyRef.current, onZoom]);
+  }, [cyRef.current, onDblClick]);
 
   // Update stylesheet of graph
   useEffect(() => {
@@ -82,8 +81,9 @@ export const SchemaGraph = ({
           "text-outline-width": 2,
 
           "border-width": (node: NodeSingular) =>
-            node.data("isSelected") ? 3 : 0,
-          "border-color": "red",
+            node.data("isFocused") || node.data("isSelected") ? 3 : 0,
+          "border-color": (node: NodeSingular) =>
+            node.data("isFocused") ? "red" : "blue",
 
           ...(nodeColor && {
             "background-color": (node: NodeSingular) =>
@@ -146,59 +146,79 @@ export const SchemaGraph = ({
     } as AVSDFLayoutOptions).run();
   }, [cyRef.current, useObject(schema)]);
 
-  // Update subgraph graph
+  // // Update subgraph graph
+  // useEffect(() => {
+  //   const cy = cyRef.current;
+  //   if (!cy) return;
+
+  //   if (!subgraph) {
+  //     // Reset subgraph data
+  //     cy.edges().forEach((edge) => void edge.removeData("subedges"));
+  //   } else {
+  //     // Initialize subgraph data
+  //     cy.edges().forEach((edge) => void edge.data("subedges", []));
+
+  //     // Update graph with data
+  //     subgraph.forEach((edge) =>
+  //       cy
+  //         .nodes(
+  //           `node[schemaNode.node_property_value=${quote(
+  //             edge.source.node_label
+  //           )}]`
+  //         )
+  //         .edgesWith(
+  //           `node[schemaNode.node_property_value=${quote(
+  //             edge.target.node_label
+  //           )}]`
+  //         )
+  //         .data("subedges")
+  //         ?.push(edge)
+  //     );
+  //   }
+
+  //   // Apply dynamic styles
+  //   applyEdgeStyles(cy);
+  // }, [cyRef.current, useObject(subgraph)]);
+
+  // Update the focus node in display
+  const prevFocusRef = useRef<NodeSingular>();
   useEffect(() => {
     const cy = cyRef.current;
     if (!cy) return;
 
-    if (!subgraph) {
-      // Reset subgraph data
-      cy.edges().forEach((edge) => void edge.removeData("subedges"));
-    } else {
-      // Initialize subgraph data
-      cy.edges().forEach((edge) => void edge.data("subedges", []));
-
-      // Update graph with data
-      subgraph.forEach((edge) =>
-        cy
-          .nodes(
-            `node[schemaNode.node_property_value=${quote(
-              edge.source.node_label
-            )}]`
-          )
-          .edgesWith(
-            `node[schemaNode.node_property_value=${quote(
-              edge.target.node_label
-            )}]`
-          )
-          .data("subedges")
-          ?.push(edge)
-      );
+    const prevFocus = prevFocusRef.current;
+    if (prevFocus) {
+      prevFocus.data("isFocused", false);
+      prevFocusRef.current = undefined;
     }
 
-    // Apply dynamic styles
-    applyEdgeStyles(cy);
-  }, [cyRef.current, useObject(subgraph)]);
-
-  // Update the selected node in display
-  const prevHighlightRef = useRef<NodeSingular>();
-  useEffect(() => {
-    const cy = cyRef.current;
-    if (!cy) return;
-
-    const prevHighlight = prevHighlightRef.current;
-    if (prevHighlight) {
-      prevHighlight.data("isSelected", false);
-      prevHighlightRef.current = undefined;
-    }
-
-    if (highlight) {
-      const selector = `node[schemaNode.node_property_value="${highlight.node_property_value}"]`;
+    if (focused) {
+      const selector = `node[schemaNode.node_property_value="${focused.node_property_value}"]`;
       const selection = cy.$(selector);
-      selection.data("isSelected", true);
-      prevHighlightRef.current = selection;
+      selection.data("isFocused", true);
+      prevFocusRef.current = selection;
     }
-  }, [cyRef.current, useObject(highlight)]);
+  }, [cyRef.current, useObject(focused)]);
+
+  // Update the selected nodes in display
+  const prevSelectedRef = useRef<NodeSingular>();
+  useEffect(() => {
+    const cy = cyRef.current;
+    if (!cy) return;
+
+    const prevSelected = prevSelectedRef.current;
+    if (prevSelected) {
+      prevSelected.data("isSelected", false);
+      prevSelectedRef.current = undefined;
+    }
+
+    if (selected) {
+      const hashes = new Set(selected.map((node) => hash(node)));
+      const nodes = cy.nodes().filter((node) => hashes.has(node.data("id")));
+      nodes.data("isSelected", true);
+      prevSelectedRef.current = nodes;
+    }
+  }, [cyRef.current, useObject(selected)]);
 
   return <Box ref={containerRef} width="100%" height="100%" />;
 };
