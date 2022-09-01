@@ -26,7 +26,7 @@ export const ExplorerESE = () => {
     () => makeNodeColorScale(data.schema),
     [useObject(data.schema)]
   );
-
+  console.log(color);
   const debounce = useMemo(() => {
     let timeout: NodeJS.Timeout | null = null;
     return (cb: () => any) => {

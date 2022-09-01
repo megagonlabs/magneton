@@ -8,6 +8,7 @@ class Profiler:
                            pwd)
         self.name = name
         self.corpus = pd.DataFrame()
+        self.merged = pd.DataFrame()
 
     def get_node_distribution(self):
         distribution = self.graph.get_stat_by_node_label()
@@ -79,4 +80,19 @@ class Profiler:
         df = self.corpus.copy()
         filtered_df = df[df['highlight'].str.contains(nodetitle)]
         return {"rows":filtered_df.to_dict('records'), "highlight":nodetitle}
+
+    def load_merge_data(self, data, entity=None, node_label=None, node_uuid=None, node_title=None):
+        df = pd.DataFrame(data)
+        if entity and node_uuid and node_title:
+            df.rename(
+                columns = {entity:'entity', node_label:'node_label', node_uuid:'node_uuid', node_title:'node'}, 
+                inplace = True)
+            self.merged = df[['entity', 'node_label', 'node_uuid', 'node']].copy()
+        else:
+            self.merged = df.copy()
+        self.merged["decision"] = "---"
+
+    def get_merge_data(self):
+        df = self.merged.copy()
+        return {"rows":df.to_dict('records')}
         
