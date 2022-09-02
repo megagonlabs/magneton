@@ -21,6 +21,7 @@ export type ContextDatum = {
 };
 
 export type MergeDatum = {
+  decision: string;
   entity: string;
   node_label: string;
   node_uuid: string;

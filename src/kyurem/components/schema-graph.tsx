@@ -31,8 +31,8 @@ export const SchemaGraph = ({
 
   nodeColor?: (label: string) => string;
 
-  selected?: SchemaNode[];
-  focused?: SchemaNode | null | false;
+  selected?: object[];
+  focused?: object | null | false;
   onClick?: (elem: Singular | null, event: MouseEvent) => void;
   onDblClick?: (elem: Singular | null, event: MouseEvent) => void;
 }) => {
@@ -193,8 +193,7 @@ export const SchemaGraph = ({
     }
 
     if (focused) {
-      const selector = `node[schemaNode.node_property_value="${focused.node_property_value}"]`;
-      const selection = cy.$(selector);
+      const selection = cy.$id(hash(focused));
       selection.data("isFocused", true);
       prevFocusRef.current = selection;
     }

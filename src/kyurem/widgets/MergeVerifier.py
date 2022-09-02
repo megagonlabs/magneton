@@ -1,5 +1,4 @@
-from asyncio import sleep
-from typing import Callable, Literal, Mapping
+from kyurem.utils.async_utils import run_coroutine
 from kyurem.widgets.HistoryView import HistoryView
 from kyurem.widgets.StatefulWidgetBase import StatefulWidgetBase
 from ..core.widget import WidgetModel

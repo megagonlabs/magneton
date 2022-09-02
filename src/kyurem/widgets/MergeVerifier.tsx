@@ -1,24 +1,22 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useState } from "react";
 import { Pane } from "../components/panes/pane";
 import { useWidgetModel } from "../core/widget";
 import {
-  CytoNodeData,
   makeNodeColorScale,
   Schema,
   SchemaGraph,
-  SchemaNode,
 } from "../components/schema-graph";
 import { ContextTable } from "../components/data-table";
 import { useObject } from "../lib/use-object";
 import { LoadingOverlay } from "../components/loading-overlay";
 import { compareBy } from "../lib/utils";
 import { MergeDatum } from "../lib/types/data-types";
-import deepEqual from "deep-equal";
 import {
   Box,
   Button,
   MenuItem,
   Select,
+  SelectChangeEvent,
   Table,
   TableBody,
   TableCell,
@@ -48,17 +46,21 @@ export const MergeVerifier = () => {
                 <TableRow key={i}>
                   <TableCell>
                     <Button
-                        onClick={() => actions.focus(entry, "mergedata").catch(setError)}
-                      >
-                        {entry.entity}
-                      </Button>
+                      onClick={() =>
+                        actions.focus(entry, "mergedata").catch(setError)
+                      }
+                    >
+                      {entry.entity}
+                    </Button>
                   </TableCell>
                   <TableCell>
                     <Button
-                        onClick={() => actions.focus(entry, "mergedata").catch(setError)}
-                      >
-                        {entry.node}
-                      </Button>
+                      onClick={() =>
+                        actions.focus(entry, "mergedata").catch(setError)
+                      }
+                    >
+                      {entry.node}
+                    </Button>
                   </TableCell>
                   <TableCell>
                     <Select
@@ -83,7 +85,7 @@ export const MergeVerifier = () => {
         <Pane direction="row">
           {data.corpus && (
             <Pane>
-              <ContextTable rows={data.corpus} highlight={data.highlight}/>
+              <ContextTable rows={data.corpus} highlight={data.highlight} />
             </Pane>
           )}
           {data.subgraph && (
@@ -91,7 +93,7 @@ export const MergeVerifier = () => {
               <SchemaGraph
                 schema={data.subgraph}
                 nodeColor={makeNodeColorScale(data.subgraph)}
-                highlight={state.focus_panel === "schema" && state.focus_row}
+                focused={state.focus_panel === "schema" && state.focus_row}
               />
             </Pane>
           )}
@@ -113,9 +115,6 @@ type Model = {
   };
 
   state: {
-    did_init?: boolean;
-    is_loading?: boolean;
-
     focus_row?: MergeDatum;
     focus_panel?: string;
 
@@ -123,7 +122,8 @@ type Model = {
       mergedata?: MergeDatum[];
       corpus?: MergeDatum[] | null;
       subgraph?: Schema;
-      decisions?: string[]; 
+      decisions?: string[];
+      highlight: any;
     };
   };
 };
