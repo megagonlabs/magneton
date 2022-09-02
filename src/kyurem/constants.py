@@ -10,6 +10,7 @@ SERVICE_ENDPOINTS = {
     'load_corpus_from_data':'/load_corpus_from_data',
     'get_annotated_corpus':'/get_annotated_corpus',
     'load_merge_data':'/load_merge_data',
-    'get_merge_data':'/get_merge_data'
+    'get_merge_data':'/get_merge_data',
+    'get_node_parents':'/node_parent'
 }
 REQUEST_TIMEOUT_SECONDS = 15

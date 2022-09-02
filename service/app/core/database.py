@@ -719,7 +719,6 @@ class Database:
 
     def _get_nodes_by_relation_and_type(self, tx, source_label, source_filter, dest_label,
                                         dest_filter, relation, return_type, count_type):
-        # MATCH (n:attribute {type:'class'})-[:specialization]->(a:attribute {type:'instance'}) RETURN n.title, count(a)
         source_construct = '(src)'
         dest_construct = '(dest)'
         if source_label is not None and source_filter is not None:
@@ -729,8 +728,7 @@ class Database:
         elif source_label is None and source_filter is None:
             source_construct = source_construct
         else:
-            print("Invalid source specification!!!")
-            return
+            print("no source specified!!!")
 
         if dest_label is not None and dest_filter is not None:
             dest_construct = '(dest: ' + dest_label + ' {' + ', '.join([ str(key) + ':' + ( _safe_neo4j_attribute_value(dest_filter[key]) ) for key in list(dest_filter.keys())]) + '})'
@@ -739,15 +737,14 @@ class Database:
         elif dest_label is None and dest_filter is None:
             dest_construct = dest_construct
         else:
-            print("Invalid destination specification!!!")
-            return
+            print("no destination specified!!!")
 
         return_stmt = ' RETURN src' if return_type == 'source' else ' RETURN dest'
         if count_type is not None:
             return_stmt += ', count(src) as node_count' if count_type == 'source' else ', count(dest) as node_count'
 
         query = ' MATCH ' + source_construct + '-[:' + relation + ']-' + dest_construct + return_stmt
-        
+        print(query)
         return self.run_query(query)
 
     def get_node_degree_distribution(self, label, _type, attribute=None, attribute_value=None):

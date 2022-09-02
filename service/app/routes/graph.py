@@ -22,3 +22,11 @@ def get_relation_neighborhood():
         return make_response('Bad request: \'schemas\' is missing', 400)
     result = g.profile.get_relation_neighborhood(node, relation)
     return make_response(jsonify(result), 200)
+
+@app.get('/node_parent')
+def get_node_parents():
+    node = request.json.get('node', None)
+    if node is None:
+        return make_response('Bad request: \'schemas\' is missing', 400)
+    result = g.profile.get_node_parents(node)
+    return make_response(jsonify(result), 200)

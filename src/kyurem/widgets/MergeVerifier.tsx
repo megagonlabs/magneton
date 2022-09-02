@@ -10,10 +10,8 @@ import {
 } from "../components/schema-graph";
 import { ContextTable } from "../components/data-table";
 import { useObject } from "../lib/use-object";
-import { horizontalBarChart, strokeHighlight } from "../components/vega-mixins";
-import { LongBarChart } from "../components/long-bar-chart";
 import { LoadingOverlay } from "../components/loading-overlay";
-import { compareBy } from "../lib/data-utils";
+import { compareBy } from "../lib/utils";
 import { MergeDatum } from "../lib/types/data-types";
 import deepEqual from "deep-equal";
 import {
@@ -70,8 +68,8 @@ export const MergeVerifier = () => {
                       label="decision"
                       onChange={(event: SelectChangeEvent) => {data.mergedata[i].decision = event.target.value;}}
                     > 
-                      {data.decisions?.map((d) => (
-                        <MenuItem value={d}>{d}</MenuItem>
+                      {data.decisions?.map((d, j) => (
+                        <MenuItem key={j} value={d}>{d}</MenuItem>
                       ))}
                     </Select>
                   </TableCell>
