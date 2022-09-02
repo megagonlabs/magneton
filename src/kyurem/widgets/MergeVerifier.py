@@ -75,3 +75,6 @@ class MergeVerifier:
 
     def show(self):
         return self.__base.component()
+
+    def export_merge_data(self):
+        return WidgetModel.unproxy(self.__base.state.data.mergedata)
