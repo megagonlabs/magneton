@@ -179,9 +179,20 @@ class Service:
             raise Exception(response.text)
         return parsed_result
 
-    def get_merge_data(self, node=None):
+    def get_merge_data(self):
         path = self.get_service_endpoint('get_merge_data')
         payload = self.get_base_payload()
+        response = get_request(path, json=payload)
+        if response.status_code == 200:
+            parsed_result = response.json()
+        else:
+            raise Exception(response.text)
+        return parsed_result
+
+    def get_node_parents(self, node=None):
+        path = self.get_service_endpoint('get_node_parents')
+        payload = self.get_base_payload()
+        payload['node'] = node
         response = get_request(path, json=payload)
         if response.status_code == 200:
             parsed_result = response.json()

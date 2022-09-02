@@ -90,9 +90,12 @@ class Profiler:
             self.merged = df[['entity', 'node_label', 'node_uuid', 'node']].copy()
         else:
             self.merged = df.copy()
-        self.merged["decision"] = "---"
+        self.merged["decision"] = ""
 
     def get_merge_data(self):
         df = self.merged.copy()
         return {"rows":df.to_dict('records')}
+
+    def get_node_parents(self, node):
+        return {"parents": self.graph.get_node_parents(node)}
         

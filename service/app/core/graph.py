@@ -101,6 +101,32 @@ class Graph:
             compiled_results[result[key]['title']] = result['node_count'] + 1
         return dict(sorted(compiled_results.items(), key=lambda item: item[1]))
 
+    def get_node_parents(self, node):
+        source_label = None
+        source_filter = {}
+        
+        dest_label = node['node_label']
+        dest_filter = {}
+        dest_filter[node['node_property']] = node['node_property_value']
+
+        relation = 'specialization'
+
+        return_node_type = 'source'
+        count_node_type = 'src'
+
+        immediate_parents = self.neo4j_conn.get_nodes_by_relation_and_type(
+            source_label, source_filter, dest_label, dest_filter, 
+            relation, return_node_type, count_node_type)
+        results = []
+        key = 'src' if return_node_type == 'source' else 'dest'
+        for parent in immediate_parents:
+            parent_node = {}
+            parent_node['node_label'] = parent[key]['type']
+            parent_node['node_property'] = node['node_property']
+            parent_node['node_property_value'] = parent[key][node['node_property']]
+            results.append(parent_node)
+        return results
+
     def get_children_stat_by_node_type_v1(self, node):
         if node['node_label'] == 'all':
             return self.get_stat_by_node_label()
