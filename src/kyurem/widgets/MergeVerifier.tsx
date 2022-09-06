@@ -68,7 +68,7 @@ export const MergeVerifier = () => {
                       id="demo-simple-select"
                       value={entry.decision}
                       label="decision"
-                      onChange={(event: SelectChangeEvent) => {data.mergedata[i].decision = event.target.value;}}
+                      onChange={(event: SelectChangeEvent) => {data.mergedata![i].decision = event.target.value;}}
                     > 
                       {data.decisions?.map((d, j) => (
                         <MenuItem key={j} value={d}>{d}</MenuItem>

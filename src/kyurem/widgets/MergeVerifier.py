@@ -1,27 +1,24 @@
-from kyurem.utils.async_utils import run_coroutine
+from asyncio import sleep
+from typing import Callable, Literal, Mapping
 from kyurem.widgets.HistoryView import HistoryView
 from kyurem.widgets.StatefulWidgetBase import StatefulWidgetBase
 from ..core.widget import WidgetModel
 from ..utils.mdump import mdump
 
 
-
 class MergeVerifier:
     def __init__(
-        self, 
-        fetchers: Mapping[Literal["init", "focus"], Callable], 
-        mergedata, 
+        self,
+        fetchers: Mapping[Literal["init", "focus"], Callable],
+        mergedata,
         decision_list,
-        component_name="MergeVerifier"
+        component_name="MergeVerifier",
     ):
         # Initialize base widget
         base: StatefulWidgetBase = StatefulWidgetBase(component_name)
 
         # Initialize state
-        base.state = {"data": {
-                                "mergedata": mergedata, 
-                                "decision_list": decision_list
-                                }}
+        base.state = {"data": {"mergedata": mergedata, "decision_list": decision_list}}
 
         # Initialize actions
         self.init = base.define_action(self.init, recorded=True)
@@ -68,7 +65,7 @@ class MergeVerifier:
 
     def export_decisions(self):
         model = self.__base.model
-        return WidgetModel.unproxy(model.state.data.mergedata)
+        return WidgetModel.unproxy(model.state.data.decisions)
 
     def history(self):
         return HistoryView(self.__base)
@@ -77,4 +74,5 @@ class MergeVerifier:
         return self.__base.component()
 
     def export_merge_data(self):
-        return WidgetModel.unproxy(self.__base.state.data.mergedata)
+        model = self.__base.model
+        return WidgetModel.unproxy(model.state.data.mergedata)
