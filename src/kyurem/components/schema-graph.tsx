@@ -113,15 +113,14 @@ export const SchemaGraph = ({
           "target-arrow-shape": (edge: EdgeSingular) =>
             edge.isLoop() ? "none" : "triangle",
 
-          ...(nodeColor && {
-            "target-arrow-color": (edge: EdgeSingular) =>
-              nodeColor(edge.target().data("schemaNode").node_label),
-            "line-fill": "linear-gradient",
-            "line-gradient-stop-colors": ((edge: EdgeSingular) => [
-              nodeColor(edge.source().data("schemaNode").node_label),
-              nodeColor(edge.target().data("schemaNode").node_label),
-            ]) as any,
-          }),
+          "target-arrow-color": (edge: EdgeSingular) =>
+            edgeColor(edge, "target", nodeColor),
+
+          "line-fill": "linear-gradient",
+          "line-gradient-stop-colors": ((edge: EdgeSingular) => [
+            edgeColor(edge, "source", nodeColor),
+            edgeColor(edge, "target", nodeColor),
+          ]) as any,
         },
       },
     ]);
@@ -212,10 +211,21 @@ export const SchemaGraph = ({
     }
 
     if (selected) {
-      const hashes = new Set(selected.map((node) => hash(node)));
+      const hashes = new Set(selected.map((elem) => hash(elem)));
       const nodes = cy.nodes().filter((node) => hashes.has(node.data("id")));
-      nodes.data("isSelected", true);
-      prevSelectedRef.current = nodes;
+      const edges = cy
+        .edges()
+        .filter(
+          (edge) =>
+            !!(edge.data() as CytoEdgeData).children.find((data) =>
+              hashes.has(hash(data.schemaEdge))
+            )
+        );
+
+      const elems = nodes.union(edges);
+
+      elems.data("isSelected", true);
+      prevSelectedRef.current = elems;
     }
   }, [cyRef.current, useObject(selected)]);
 
@@ -344,6 +354,15 @@ const getTarget = (e: EventObject) =>
  * Quote and escape special characters in string
  */
 const quote = (str: string) => JSON.stringify(str);
+
+const edgeColor = (
+  edge: EdgeSingular,
+  endpoint: "source" | "target",
+  nodeColor?: (label: string) => string
+) =>
+  edge.data("isSelected")
+    ? "blue"
+    : nodeColor?.(edge[endpoint]().data("schemaNode").node_label) ?? "grey";
 
 /////////////
 /// TYPES ///
