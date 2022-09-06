@@ -61,9 +61,9 @@ class Explorer:
         WidgetModel.unproxy(model.state.data).update(data)
         model.t_state.is_loading = False
 
-    def select(self, node):
+    def select(self, *elems):
         model = self.__base.model
-        WidgetModel.unproxy(model.t_state.selection).append(node)
+        WidgetModel.unproxy(model.t_state.selection).extend(elems)
 
     def back(self):
         base = self.__base
