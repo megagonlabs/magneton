@@ -31,8 +31,8 @@ export const SchemaGraph = ({
 
   nodeColor?: (label: string) => string;
 
-  selected?: SchemaNode[];
-  focused?: SchemaNode | null | false;
+  selected?: object[];
+  focused?: object | null | false;
   onClick?: (elem: Singular | null, event: MouseEvent) => void;
   onDblClick?: (elem: Singular | null, event: MouseEvent) => void;
 }) => {
@@ -87,7 +87,7 @@ export const SchemaGraph = ({
 
           ...(nodeColor && {
             "background-color": (node: NodeSingular) =>
-              nodeColor(node.data("label")),
+              nodeColor(node.data("schemaNode").node_label),
           }),
         },
       },
@@ -115,11 +115,11 @@ export const SchemaGraph = ({
 
           ...(nodeColor && {
             "target-arrow-color": (edge: EdgeSingular) =>
-              nodeColor(edge.target().data("label")),
+              nodeColor(edge.target().data("schemaNode").node_label),
             "line-fill": "linear-gradient",
             "line-gradient-stop-colors": ((edge: EdgeSingular) => [
-              nodeColor(edge.source().data("label")),
-              nodeColor(edge.target().data("label")),
+              nodeColor(edge.source().data("schemaNode").node_label),
+              nodeColor(edge.target().data("schemaNode").node_label),
             ]) as any,
           }),
         },
@@ -193,8 +193,7 @@ export const SchemaGraph = ({
     }
 
     if (focused) {
-      const selector = `node[schemaNode.node_property_value="${focused.node_property_value}"]`;
-      const selection = cy.$(selector);
+      const selection = cy.$id(hash(focused));
       selection.data("isFocused", true);
       prevFocusRef.current = selection;
     }

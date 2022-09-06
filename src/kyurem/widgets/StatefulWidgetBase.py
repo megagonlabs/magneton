@@ -113,11 +113,6 @@ class StatefulWidgetBase(WidgetBase, Generic[State, Actions]):
         self.__emitter.emit("push_state")
 
     def pop_state(self, i: int = None):
-        # Validate arguments
-        assert (i >= 0 and i < len(self.history)) or (
-            i is None and self.__current_index > 0
-        )
-
         # If index is not specified, decrement
         if i is None:
             i = self.__current_index - 1

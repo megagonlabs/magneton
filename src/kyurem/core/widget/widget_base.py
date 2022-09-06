@@ -16,7 +16,7 @@ class WidgetBase:
         props: Any = {},
         model: Union[WidgetModel, Mapping] = {},
     ):
-        self.__component = load_component(component_name)
+        self.__component_name = component_name
         self.__props = props
 
         self.__component_ids = set()
@@ -183,7 +183,7 @@ class WidgetBase:
         self.__render_count += 1
         use_effect(notify_render_listeners, [self.__render_count])
 
-        return self.__component(
+        return load_component(self.__component_name)(
             {
                 "wrapperProps": {
                     "clientId": component_id,
