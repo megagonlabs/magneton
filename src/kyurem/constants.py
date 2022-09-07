@@ -13,4 +13,4 @@ SERVICE_ENDPOINTS = {
     'get_merge_data':'/get_merge_data',
     'get_node_parents':'/node_parent'
 }
-REQUEST_TIMEOUT_SECONDS = 15
+REQUEST_TIMEOUT_SECONDS = 150
