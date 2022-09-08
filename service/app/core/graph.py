@@ -84,7 +84,7 @@ class Graph:
         dest_filter = {}
         dest_filter['type'] = 'instance'
 
-        relation = 'specialization'
+        relation = 'isSpecializationOf'
 
         return_node_type = 'source'
         count_node_type = 'dest'
@@ -92,9 +92,7 @@ class Graph:
         results = self.neo4j_conn.get_nodes_by_relation_and_type(
             source_label, source_filter, dest_label, dest_filter, 
             relation, return_node_type, count_node_type)
-
         compiled_results = {}
-
         key = 'src' if return_node_type == 'source' else 'dest'
 
         for result in results:
@@ -109,7 +107,7 @@ class Graph:
         dest_filter = {}
         dest_filter[node['node_property']] = node['node_property_value']
 
-        relation = 'specialization'
+        relation = 'isSpecializationOf'
 
         return_node_type = 'source'
         count_node_type = 'src'
@@ -140,7 +138,7 @@ class Graph:
         dest_filter = {}
         #dest_filter['type'] = 'instance'
 
-        relation = 'specialization'
+        relation = 'isSpecializationOf'
 
         return_node_type = 'dest'
         count_node_type = 'dest'
@@ -426,6 +424,10 @@ class Graph:
         for res in result_list:
             try:
                 relation_label = res['relation']
+                if 'isSpecializationOf' in relation_label:
+                    continue
+                if 'specialization' in relation_label:
+                    continue
                 source_node = {'node_label': res['source']['type'],
                                 'node_property': node_property, 
                                 'node_property_value': res['source'][node_property]}
