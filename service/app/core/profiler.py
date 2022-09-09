@@ -78,7 +78,7 @@ class Profiler:
         if nodetitle=="*":
             return {"rows": [], "highlight": "*"}
         df = self.corpus.copy()
-        filtered_df = df[df['highlight'].str.contains(nodetitle)]
+        filtered_df = df[df['highlight'].str.contains(nodetitle, case=False)]
         return {"rows":filtered_df.to_dict('records'), "highlight":nodetitle}
 
     def load_merge_data(self, data, entity=None, node_label=None, node_uuid=None, node_title=None):
