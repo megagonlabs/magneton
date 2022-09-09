@@ -746,6 +746,42 @@ class Database:
         query = ' MATCH ' + source_construct + '-[:' + relation + ']-' + dest_construct + return_stmt
         return self.run_query(query)
 
+    def get_immediate_children(self, source_label, source_filter, 
+                                dest_label, dest_filter, relation):
+        result = self._read_transaction(self._get_immediate_children,
+                                        source_label, source_filter, dest_label,
+                                        dest_filter, relation)
+
+        return result
+
+    def _get_immediate_children(self, tx, source_label, source_filter, dest_label,
+                                    dest_filter, relation):
+        source_construct = '(src)'
+        dest_construct = '(dest)'
+        if source_label is not None and source_filter is not None:
+            source_construct = '(src: ' + source_label + ' {' + ', '.join([ str(key) + ':' + ( _safe_neo4j_attribute_value(source_filter[key]) ) for key in list(source_filter.keys())]) + '})'
+        elif source_label is not None and source_filter is None:
+            source_construct = '(src: ' + source_label + ')'
+        elif source_label is None and source_filter is None:
+            source_construct = source_construct
+        else:
+            print("no source specified!!!")
+
+        if dest_label is not None and dest_filter is not None:
+            dest_construct = '(dest: ' + dest_label + ' {' + ', '.join([ str(key) + ':' + ( _safe_neo4j_attribute_value(dest_filter[key]) ) for key in list(dest_filter.keys())]) + '})'
+        elif dest_label is not None and dest_filter is None:
+            dest_construct = '(src: ' + dest_label + ')'
+        elif dest_label is None and dest_filter is None:
+            dest_construct = dest_construct
+        else:
+            print("no destination specified!!!")
+
+        return_stmt = ' RETURN dest'
+        
+        query = ' MATCH ' + source_construct + '-[:' + relation + ']->' + dest_construct + return_stmt
+        #print(query)
+        return self.run_query(query)
+
     def get_node_degree_distribution(self, label, _type, attribute=None, attribute_value=None):
         if attribute is None:
             node = '(n: ' + label + ')'

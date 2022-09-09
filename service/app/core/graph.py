@@ -173,6 +173,46 @@ class Graph:
         compiled_results = dict(sorted(compiled_results.items(), key=lambda item: item[1]))
         return compiled_results, full_results
 
+    def get_children_stat_by_node_type_v2(self, node):
+        if node['node_label'] == 'all':
+            return self.get_stat_by_node_label()
+
+        source_label = node['node_label']
+        source_filter = {}
+        #source_filter['type'] = 'class'
+        source_filter[node['node_property']] = node['node_property_value']
+
+        dest_label = node['node_label']
+        dest_filter = {}
+        #dest_filter['type'] = 'instance'
+
+        relation = 'isGeneralizationOf'
+
+        # get the immediate children of a node
+        immediate_children = self.neo4j_conn.get_immediate_children(
+            source_label, source_filter, dest_label, dest_filter, 
+            relation)
+
+        compiled_results = {}
+        full_results = {}
+
+        # for each immediate children, get their children count
+        for child in immediate_children:
+            source_filter = {}
+            source_filter[node['node_property']] = child['dest'][node['node_property']]
+            results = self.neo4j_conn.get_immediate_children(
+                source_label, source_filter, dest_label, dest_filter, 
+                relation)
+
+            compiled_results[child['dest'][node['node_property']]] = len(results) + 1
+            full_results[child['dest'][node['node_property']]] = {
+                'node_label': source_label,
+                node['node_property']: child['dest'][node['node_property']],
+                'uuid':child['dest']['uuid']
+            }
+        compiled_results = dict(sorted(compiled_results.items(), key=lambda item: item[1]))
+        return compiled_results, full_results
+
     def relation_count(self):
         results = self.neo4j_conn.get_per_relation_count()
 
@@ -424,9 +464,7 @@ class Graph:
         for res in result_list:
             try:
                 relation_label = res['relation']
-                if 'isSpecializationOf' in relation_label:
-                    continue
-                if 'specialization' in relation_label:
+                if 'isGeneralizationOf' in relation_label:
                     continue
                 source_node = {'node_label': res['source']['type'],
                                 'node_property': node_property, 
@@ -434,7 +472,10 @@ class Graph:
                 target_node = {'node_label': res['target']['type'],
                                'node_property': node_property, 
                                'node_property_value': res['target'][node_property]}
-                neighborhood_edge_dict[relation_label].append((source_node, target_node))
+                if 'isSpecializationOf' in relation_label:
+                    neighborhood_edge_dict[relation_label].append((target_node, source_node))
+                else:
+                    neighborhood_edge_dict[relation_label].append((source_node, target_node))
             except:
                 print("datasource node exception handled")
             
