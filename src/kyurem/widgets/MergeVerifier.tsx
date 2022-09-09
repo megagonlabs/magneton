@@ -23,11 +23,22 @@ import {
   TableHead,
   TableRow,
 } from "@mui/material";
+import { 
+  createMuiTheme,
+  ThemeProvider 
+} from "@mui/material/styles";
 
 export const MergeVerifier = () => {
   const [error, setError] = useState<any>();
   const { actions, state } = useWidgetModel<Model>();
   const data = state.data;
+  const theme_lowercase = createMuiTheme({
+    typography: {
+      button: {
+        textTransform: 'none'
+      }
+    }
+  });
 
   return (
     <LoadingOverlay error={error}>
@@ -45,22 +56,26 @@ export const MergeVerifier = () => {
               {data.mergedata?.map((entry, i) => (
                 <TableRow key={i}>
                   <TableCell>
-                    <Button
-                      onClick={() =>
-                        actions.focus(entry, "mergedata").catch(setError)
-                      }
-                    >
-                      {entry.entity}
-                    </Button>
+                    <ThemeProvider theme={theme_lowercase}>
+                      <Button
+                        onClick={() =>
+                          actions.focus(entry, "mergedata").catch(setError)
+                        }
+                      >
+                        {entry.entity}
+                      </Button>
+                    </ThemeProvider>
                   </TableCell>
                   <TableCell>
-                    <Button
-                      onClick={() =>
-                        actions.focus(entry, "mergedata").catch(setError)
-                      }
-                    >
-                      {entry.node}
-                    </Button>
+                    <ThemeProvider theme={theme_lowercase}>
+                      <Button
+                        onClick={() =>
+                          actions.focus(entry, "mergedata").catch(setError)
+                        }
+                      >
+                        {entry.node}
+                      </Button>
+                    </ThemeProvider>
                   </TableCell>
                   <TableCell>
                     <Select
