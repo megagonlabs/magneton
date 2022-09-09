@@ -5,6 +5,7 @@ import {
   CytoNodeData,
   makeNodeColorScale,
   Schema,
+  SchemaEdge,
   SchemaGraph,
   SchemaNode,
 } from "../components/schema-graph";
@@ -44,10 +45,18 @@ export const ExplorerESE = () => {
             nodeColor={color}
             selected={t_state.selection}
             focused={state.focus_panel === "schema" && state.focus_node}
-            onClick={(node, ev) => {
-              if (!node) {
-              } else if (node.isNode()) {
-                const data = node.data() as CytoNodeData;
+            onClick={(elem, ev) => {
+              if (!elem) {
+              } else if (elem.isEdge()) {
+                const data = elem.data() as CytoEdgeData;
+                if (ev.ctrlKey) {
+                  // Ctrl + Click = Select
+                  actions
+                    .select(...data.children.map((c) => c.schemaEdge))
+                    .catch(setError);
+                }
+              } else if (elem.isNode()) {
+                const data = elem.data() as CytoNodeData;
                 if (ev.ctrlKey) {
                   // Ctrl + Click = Select
                   actions.select(data.schemaNode).catch(setError);
@@ -177,13 +186,13 @@ type Model = {
   actions: {
     init(): Promise<void>;
     focus(node: SchemaNode | null, panel: string | null): Promise<void>;
-    select(node: SchemaNode): Promise<void>;
+    select(...elems: (SchemaNode | SchemaEdge)[]): Promise<void>;
     back(): Promise<void>;
   };
 
   t_state: {
     is_loading?: boolean;
-    selection?: SchemaNode[];
+    selection: (SchemaNode | SchemaEdge)[];
   };
 
   state: {
