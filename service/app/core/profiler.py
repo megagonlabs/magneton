@@ -32,7 +32,7 @@ class Profiler:
         return distribution_list
 
     def get_children_node_distributions(self, node):
-        distribution, metadata = self.graph.get_children_stat_by_node_type_v1(node)
+        distribution, metadata = self.graph.get_children_stat_by_node_type_v2(node)
         distribution_list = []
         for key, value in distribution.items():
             distribution_list.append({"x": key, "y": value, "node": metadata[key]})
