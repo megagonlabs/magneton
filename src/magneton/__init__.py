@@ -31,7 +31,5 @@ print("magneton_client: " + VERSION)
 
 # Export widgets
 from .widgets.Explorer import Explorer
-from .widgets.ExplorerESE import ExplorerESE
-from .widgets.MergeVerifier import MergeVerifier
 from .widgets.HistoryView import HistoryView
 from .service import Service

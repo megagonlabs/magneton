@@ -16,10 +16,10 @@ First, clone this repo with the following commands.
 
 ```sh
 # Clone the repository from git
-git clone git@github.com:rit-git/kyurem.gitgit@github.com:
+git clone git@github.com:rit-git/magneton.gitgit@github.com:
 
 # cd into cloned repo
-cd kyurem
+cd magneton
 ```
 
 ### 2a. Install dependencies (with pipenv already installed)
@@ -87,7 +87,7 @@ pipenv run jupyter notebook
 
 Follow these steps to create a widget. Look at `src/widgets/sample.py` and `src/widgets/sample.tsx` for examples. For these steps, we will assume your widget is called `mywidget`.
 
-### 1. Create source files
+Create source files
 
 Create a `mywidget.py` and a `mywidget.tsx` in `src/widgets` as follows. Note that these files can be placed anywhere, as long as they are exported properly in step n.
 
@@ -98,7 +98,3 @@ Create a `mywidget.py` and a `mywidget.tsx` in `src/widgets` as follows. Note th
         ├── mywidget.py
         └── mywidget.tsx
 ```
-
-### 2. Create your widget
-
-WIP
