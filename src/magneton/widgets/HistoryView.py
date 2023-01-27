@@ -1,4 +1,4 @@
-from kyurem.widgets.StatefulWidgetBase import StatefulWidgetBase
+from magneton.widgets.StatefulWidgetBase import StatefulWidgetBase
 
 
 class HistoryView:
