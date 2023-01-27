@@ -20,7 +20,7 @@ const extend = <T>(base: T, ext: any): T => {
  * Base configuration used in all environments
  */
 const base: Configuration = {
-  entry: "./src/kyurem",
+  entry: "./src/magneton",
 
   // Get Webpack to recognize and load TypeScript files
   module: {
@@ -50,7 +50,7 @@ const base: Configuration = {
     module: true,
     library: { type: "module" },
 
-    path: path.resolve(__dirname, "src/kyurem"),
+    path: path.resolve(__dirname, "src/magneton"),
   },
 
   // Enable experimental output mode to allow

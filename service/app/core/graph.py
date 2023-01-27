@@ -482,7 +482,7 @@ class Graph:
         relation_dist = self.get_node_degree_distributions_v1(node_label, 
             node_property, node_property_value)
 
-        n_sample_drawn = math.ceil(n_sample / len(neighborhood_edge_dict.keys()))
+        n_sample_drawn = n_sample #math.ceil(n_sample / len(neighborhood_edge_dict.keys()))
 
         for key, value in neighborhood_edge_dict.items():
             edge_list = value

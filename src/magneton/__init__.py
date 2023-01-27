@@ -27,7 +27,7 @@ except ImportError or ModuleNotFoundError:
 
 _VERSION_PATH = Path(__file__).parent / "version"
 VERSION = Path(_VERSION_PATH).read_text().strip()
-print("kyurem_client: " + VERSION)
+print("magneton_client: " + VERSION)
 
 # Export widgets
 from .widgets.Explorer import Explorer

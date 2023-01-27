@@ -4,7 +4,7 @@
 
 ## Acknowledgements
 
-Widget code based on https://github.com/koreanwglasses/jupyter-react-widget-template
+Widget code based on https://github.com/rit-git/pre-magneton-cookie-cutter
 
 Service app was initially set up by Rafael Li Chen.
 
