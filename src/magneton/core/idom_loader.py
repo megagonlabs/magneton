@@ -18,7 +18,7 @@ FALLBACK = "⌛"
 
 __web_module = None
 
-NAME = "mypackage"
+NAME = "magneton"
 
 
 def __load_web_module():

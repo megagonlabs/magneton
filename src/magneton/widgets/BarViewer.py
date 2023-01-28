@@ -1,32 +1,29 @@
 from asyncio import sleep
 from typing import Callable, Literal, Mapping
-from magneton.widgets.HistoryView import HistoryView
-from magneton.widgets.StatefulWidgetBase import StatefulWidgetBase
+from ..core.widget.HistoryView import HistoryView
+from ..core.widget.StatefulWidgetBase import StatefulWidgetBase
 from ..core.widget import WidgetModel
 from ..utils.mdump import mdump
 
 
-class Explorer:
+class BarViewer:
     def __init__(
         self,
-        fetchers: Mapping[Literal["init", "focus"], Callable],
-        schema,
-        component_name="Explorer",
+        fetchers: Mapping[Literal["init"], Callable],
+        component_name="BarViewer",
     ):
         # Initialize base widget
         base: StatefulWidgetBase = StatefulWidgetBase(component_name)
 
         # Initialize state
-        base.state = {"data": {"schema": schema}}
+        base.state = {"data": {}}
 
         # Initialize transient state
         # Note: transient state is not saved in history
-        base.model.t_state = {"is_loading": True, "selection": []}
+        base.model.t_state = {"is_loading": True}
 
         # Initialize actions
         self.init = base.define_action(self.init, recorded=True)
-        self.focus = base.define_action(self.focus, recorded=True)
-        self.select = base.define_action(self.select)
         self.back = base.define_action(self.back)
 
         # Initialize internals
@@ -47,24 +44,6 @@ class Explorer:
         WidgetModel.unproxy(model.state.data).update(data)
         model.t_state.is_loading = False
 
-    def focus(self, node, panel):
-        model, fetchers = self.__base.model, self.__fetchers
-
-        # Set interaction state
-        model.state.focus_node = node
-        model.state.focus_panel = panel
-        model.t_state.is_loading = True
-        yield  # Allow component to render
-
-        # Fetch/update data
-        data = fetchers["focus"](node, panel)
-        WidgetModel.unproxy(model.state.data).update(data)
-        model.t_state.is_loading = False
-
-    def select(self, *elems):
-        model = self.__base.model
-        WidgetModel.unproxy(model.t_state.selection).extend(elems)
-
     def back(self):
         base = self.__base
 
@@ -73,10 +52,6 @@ class Explorer:
 
     def debug(self, l=2):
         print(mdump(self.__base.model, l))
-
-    def export_selection(self):
-        model = self.__base.model
-        return WidgetModel.unproxy(model.t_state.selection)
 
     def history(self):
         return HistoryView(self.__base)
