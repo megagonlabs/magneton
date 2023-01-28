@@ -1,4 +1,4 @@
-from magneton.widgets.StatefulWidgetBase import StatefulWidgetBase
+from .StatefulWidgetBase import StatefulWidgetBase
 
 
 class HistoryView:

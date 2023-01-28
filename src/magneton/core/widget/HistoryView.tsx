@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { Pane } from "../components/panes/pane";
-import { useWidgetModel } from "../core/widget";
-import { LoadingOverlay } from "../components/loading-overlay";
+import { Pane } from "../../components/panes/pane";
+import { useWidgetModel } from "../widget";
+import { LoadingOverlay } from "../../components/loading-overlay";
 import {
   Box,
   Button,
@@ -11,7 +11,7 @@ import {
   TableHead,
   TableRow,
 } from "@mui/material";
-import { ObjectExplorer } from "../components/object-explorer";
+import { ObjectExplorer } from "../../components/object-explorer";
 
 export const HistoryView = () => {
   const [error, setError] = useState<any>();
@@ -24,8 +24,10 @@ export const HistoryView = () => {
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell width="45%">Action</TableCell>
-                <TableCell width="45%">State</TableCell>
+                <TableCell width="15%">Action Type</TableCell>
+                <TableCell width="30%">Element</TableCell>
+                <TableCell width="15%">Component</TableCell>
+                <TableCell width="30%">Data</TableCell>
                 <TableCell width="10%" />
               </TableRow>
             </TableHead>
@@ -33,11 +35,25 @@ export const HistoryView = () => {
               {state.history?.map((entry, i) => (
                 <TableRow key={i}>
                   <TableCell>
-                    <ObjectExplorer value={entry.action} />
+                    <ObjectExplorer value={entry.action.name} />
                   </TableCell>
-                  <TableCell>
-                    <ObjectExplorer value={entry.state} />
-                  </TableCell>
+                    <TableCell>
+                      {entry.action.args.length > 0 ? (
+                        <ObjectExplorer value={entry.state.event_element} />
+                      ) : (
+                        "N/A"
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {entry.action.args.length > 1 ? (
+                        <ObjectExplorer value={entry.state.event_component} />
+                      ) : (
+                        "N/A"
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <ObjectExplorer value={entry.state.data} />
+                    </TableCell>
                   <TableCell>
                     {state.active_index === i ? (
                       <Button disabled>Current</Button>

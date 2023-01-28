@@ -13,9 +13,10 @@ from typing import (
 )
 
 
-from ..core.widget import WidgetModel, WidgetBase
-from ..utils.emitter import Emitter
-from ..utils.deepcopy import deepcopy
+from .widget_base import WidgetBase
+from .widget_model import WidgetModel
+from ...utils.emitter import Emitter
+from ...utils.deepcopy import deepcopy
 
 
 State = TypeVar("State", bound=Mapping)
