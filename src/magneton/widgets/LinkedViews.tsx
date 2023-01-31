@@ -70,11 +70,15 @@ export const LinkedViews = () => {
 
                     <StyledTableRow key={i}>
                       <StyledTableCell>
-                        <Button
-                          onClick={() => actions.select(row,"table").catch(setError)}
-                        >
-                          {row}
-                        </Button>
+                        {state.data.index === i ? (
+                          <Button disabled>{row}</Button>
+                        ) : (
+                          <Button
+                            onClick={() => actions.select(row,"table").catch(setError)}
+                          >
+                            {row}
+                          </Button>
+                        )}
                       </StyledTableCell>
                     </StyledTableRow>
                   ))}
@@ -123,6 +127,7 @@ type Model = {
     event_component?: string;
     data: {
       table?: string[];
+      index?: number;
       distribution?: DistDatum[];
     };
   };

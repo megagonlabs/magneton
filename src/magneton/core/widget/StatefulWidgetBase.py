@@ -38,6 +38,7 @@ class StatefulWidgetBase(WidgetBase, Generic[State, Actions]):
         # Initialize internals
         self.model = model
         self.history: List[State] = []
+        self.state = self.model.state
         self.__current_index = 0
         self.__emitter: Emitter[Literal["pop_state", "push_state"]] = Emitter()
 
