@@ -7,11 +7,12 @@ from ..core.widget import WidgetModel
 from ..utils.mdump import mdump
 
 
-class LinkedViews:
+class CustomInitLinkedViews:
     def __init__(
         self,
         dataset,
         column_name,
+        fetchers: Mapping[Literal["init", "select"], Callable],
         component_name="LinkedViews",
     ):
         # Initialize base widget
@@ -30,6 +31,7 @@ class LinkedViews:
         
         # Initialize internals
         self.__base = base
+        self.__fetchers = fetchers
 
         # Initialize data
         self.dataset = dataset
@@ -37,18 +39,20 @@ class LinkedViews:
         self.init()
 
     async def init(self):
-        model = self.__base.model
+        model, fetchers = self.__base.model, self.__fetchers
 
         # Allow component to mount
         await sleep(0.1)
 
         # Fetch/update data
-        data = {
-                "distribution": self.get_distribution_by_column(),
-                "index": -1,
-                "table": self.get_data_table()
-                }
-
+        if "init" in fetchers:
+            data = fetchers["init"]()
+        else:
+            data = {
+                    "distribution": self.get_distribution_by_column(),
+                    "index": -1,
+                    "table": self.get_data_table()
+                    }
         WidgetModel.unproxy(model.state.data).update(data)
         model.t_state.is_loading = False
 
@@ -70,7 +74,7 @@ class LinkedViews:
             for key in ls:
                 if key != self.column_name:
                     result.append({"x": key, "y": df[key]})
-        return result
+        return result 
 
     def select(self, element, component):
         model = self.__base.model
@@ -86,7 +90,6 @@ class LinkedViews:
                 "distribution": self.get_distribution_by_column(element),
                 "index": self.get_data_table().index(element)
                 }
-
         WidgetModel.unproxy(model.state.data).update(data)
         model.t_state.is_loading = False
 
