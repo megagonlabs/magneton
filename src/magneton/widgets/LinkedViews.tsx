@@ -59,7 +59,12 @@ export const LinkedViews = () => {
       <Pane initialHeight={400}>
         <Pane direction="row">
           <Pane>
-            <Table sx={{ minWidth: 50 }} aria-label="customized table">
+            <TableContainer
+              sx={{
+                height: 400    
+              }}
+            >
+              <Table sx={{ height: "max-content" }} aria-label="customized table">
                 <TableHead>
                   <TableRow>
                     <StyledTableCell>State</StyledTableCell>
@@ -84,6 +89,7 @@ export const LinkedViews = () => {
                   ))}
                 </TableBody>
               </Table>
+            </TableContainer>
           </Pane>
           <Pane>
             {data.distribution && (
