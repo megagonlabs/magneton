@@ -6,7 +6,7 @@
 
 Widget code based on https://github.com/rit-git/pre-magneton-cookie-cutter
 
-Service app was initially set up by Rafael Li Chen.
+TODO: refer to the public repo published by Rafael
 
 ## First-Time Setup
 
