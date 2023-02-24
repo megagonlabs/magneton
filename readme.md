@@ -98,3 +98,8 @@ Create a `mywidget.py` and a `mywidget.tsx` in `src/widgets` as follows. Note th
         ├── mywidget.py
         └── mywidget.tsx
 ```
+
+## Widget Examples
+
+- Pre-defined widget: [View state-wise distribution](/notebooks/prebuilt_widget_example.ipynb)
+- Customizable widgets: {[Single component](/notebooks/widget_example_custom_init.ipynb), [All components](/notebooks/widget_example_custom_all.ipynb)}
