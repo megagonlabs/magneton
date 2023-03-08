@@ -51,6 +51,27 @@ pipenv --python=$(conda run which python) --site-packages
 
 Then repeat the steps in ``2a``.
 
+### 3. (Optional) Rename your package
+
+To rename your package, simply rename the `src/magneton` directory and replace `name = "magneton"` in `pyproject.toml`. Then, update the entry point and output of the base configuration in `webpack.config.ts` like so:
+
+```ts
+/** webpack.config.ts **/
+/* ... */
+const base: Configuration = {
+    entry: "./src/your-package-name"
+    /* ... */
+    output: {
+        /* ... */
+        path: path.resolve(__dirname, "src/your-package-name"),
+    }
+    /* ... */
+}
+/* ... */
+```
+
+Finally, update the `NAME` constant in `src/your-package-name/core/idom_loader.py`.
+
 ## Building and Debugging
 
 Use the following command to build the package to `dist`.
@@ -95,11 +116,20 @@ Create a `mywidget.py` and a `mywidget.tsx` in `src/widgets` as follows. Note th
 .
 └── src
     └── widgets
-        ├── mywidget.py
-        └── mywidget.tsx
+        ├── PlaceHolder.py
+        └── PlaceHolder.tsx
 ```
 
+Update init.py and index.ts
+
 ## Widget Examples
+
+```
+from magneton import PlaceHolder
+
+widget = PlaceHolder()
+widget.show()
+```
 
 - Pre-defined widget: [View state-wise distribution](/notebooks/prebuilt_widget_example.ipynb)
 - Customizable widgets: {[Single component](/notebooks/widget_example_custom_init.ipynb), [All components](/notebooks/widget_example_custom_all.ipynb)}

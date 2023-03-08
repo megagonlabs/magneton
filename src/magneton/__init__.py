@@ -30,6 +30,4 @@ VERSION = Path(_VERSION_PATH).read_text().strip()
 print("magneton_client: " + VERSION)
 
 # Export widgets
-from .widgets.LinkedViews import LinkedViews
-from .widgets.CustomInitLinkedViews import CustomInitLinkedViews
-from .widgets.FullyCustomizableLinkedViews import FullyCustomizableLinkedViews
+from .widgets.PlaceHolder import PlaceHolder
