@@ -2,6 +2,11 @@
 
 A cookiecutter template for creating transparent, reusable, and customization widgets in computational notebooks. The template is adapted from [react-jupyter-cookiecutter](https://github.com/megagonlabs/react-jupyter-cookiecutter). Widgets embedded within computational notebooks are suitable for iterative data science workfows. However, these widgets lack robust state management capabilities and do not support user-defned customization of the interactive components. Magneton framework bridges these gaps by introducing a built-in interaction history tracker, a state-manager to maintain widget state history, and an action wrapper to enable on-demand customization of operations defined by widget developers.
 
+![teasersecond_lbw_counter](https://user-images.githubusercontent.com/8811607/223864204-966e6b3e-c884-40e7-a3cc-52571efd5162.png)
+
+The above figure provides a brief overview of `Magneton` features (counter clock-wise). (A) User instantiates a graph exploration widget from the notebook. (B) A multiple-coordinated view consisting of a graph schema and corresponding node (top) and relation (bottom) distribution components is displayed. (C) A customized widget displaying node distribution in alphabetic order --- (D) 
+  user defines an initialization function `init()` to customize the sort order and passes it as a callback function during widget initialization. (E) User exports the widget state using the `export_data()` accessor function. 
+
 # Getting Started
 
 > Note: This template is not compatible with Jupyter Notebook v7. Specifically, requires `notebook<7` and `ipywidgets<8`
@@ -14,7 +19,7 @@ First, clone this repo with the following commands.
 
 ```sh
 # Clone the repository from git
-git clone git@github.com:rit-git/magneton.gitgit@github.com:
+git clone git@github.com:rit-git/magneton.git
 
 # cd into cloned repo
 cd magneton
@@ -104,33 +109,36 @@ pipenv run jupyter notebook
 
 ## Creating a Widget
 
-Follow these steps to create a widget. Look at `src/widgets/sample.py` and `src/widgets/sample.tsx` for examples. For these steps, we will assume your widget is called `mywidget`.
+Follow these steps to create a widget. Look at `src/widgets/PlaceHolder.py` and `src/widgets/PlaceHolder.tsx` for examples. For these steps, we will assume your widget is called `mywidget`.
 
 Create source files
 
-Create a `mywidget.py` and a `mywidget.tsx` in `src/widgets` as follows. Note that these files can be placed anywhere, as long as they are exported properly in step n.
+Create a `mywidget.py` and a `mywidget.tsx` in `src/widgets` as follows. Note that these files can be placed anywhere, as long as they are exported properly: a new widget is created, add `Export` references in `init.py` and `index.ts` for the respective python and typescript files.
 
 ```
 .
 └── src
     └── widgets
-        ├── PlaceHolder.py
-        └── PlaceHolder.tsx
+        ├── mywidget.py
+        └── mywidget.tsx
 ```
-
-Note that whenever a new widget is created, add `Export` references in `init.py` and `index.ts` for the respective python and typescript files.
 
 ## Widget Examples
 
-```
+Once a widget such as the `PlaceHolder` is created, end-users can access and launch the widget as follow:
+
+```python
 from magneton import PlaceHolder
 
 widget = PlaceHolder()
 widget.show()
 ```
 
-- Pre-defined widget: [View state-wise distribution](/notebooks/prebuilt_widget_example.ipynb)
-- Customizable widgets: {[Single component](/notebooks/widget_example_custom_init.ipynb), [All components](/notebooks/widget_example_custom_all.ipynb)}
+Following are some more concrete examples of widgets created with `Magneton` and their capabilities:
+
+- Pre-defined widget: [View state-wise distribution](https://github.com/rit-git/magneton-examples/blob/main/notebooks/prebuilt_widget_example.ipynb)
+- Customizable widgets: {[Single component](https://github.com/rit-git/magneton-examples/blob/main/notebooks/widget_example_custom_init.ipynb), [All components](https://github.com/rit-git/magneton-examples/blob/main/notebooks/widget_example_custom_all.ipynb)}
+- Customize using GPT-3/ChatGPT-powered UDFs: {[GPT-3](https://github.com/rit-git/magneton-examples/blob/main/notebooks/gpt3-example.ipynb), [ChatGPT](https://github.com/rit-git/magneton-examples/blob/main/notebooks/chatGPT-example.ipynb)}
 
 # Citation and Contact
 For more details on the `Magneton` framework read our technical paper at [CHI 2023](https://doi.org/10.1145/3544549.3585807). Cite our work as follows: 
