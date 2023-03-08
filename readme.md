@@ -111,9 +111,9 @@ pipenv run jupyter notebook
 
 Follow these steps to create a widget. Look at `src/widgets/PlaceHolder.py` and `src/widgets/PlaceHolder.tsx` for examples. For these steps, we will assume your widget is called `mywidget`.
 
-Create source files
+### Create source files
 
-Create a `mywidget.py` and a `mywidget.tsx` in `src/widgets` as follows. Note that these files can be placed anywhere, as long as they are exported properly: a new widget is created, add `Export` references in `init.py` and `index.ts` for the respective python and typescript files.
+Create a `mywidget.py` and a `mywidget.tsx` in `src/widgets` as follows. Note that these files can be placed anywhere, as long as they are exported properly: whenever a new widget is created, add `Export` references in `init.py` and `index.ts` for the respective python and typescript files. 
 
 ```
 .
@@ -122,6 +122,8 @@ Create a `mywidget.py` and a `mywidget.tsx` in `src/widgets` as follows. Note th
         ├── mywidget.py
         └── mywidget.tsx
 ```
+
+Checkout the implementation of the `PlaceHolder` widget for further details.
 
 ## Widget Examples
 
