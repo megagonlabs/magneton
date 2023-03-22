@@ -1,3 +1,5 @@
+🚧 WARNING: Magneton is still a work in progress and should not be used for production workloads. 🚧
+
 # Magneton
 
 A cookiecutter template for creating transparent, reusable, and customization widgets in computational notebooks. The template is adapted from [react-jupyter-cookiecutter](https://github.com/megagonlabs/react-jupyter-cookiecutter). Widgets embedded within computational notebooks are suitable for iterative data science workfows. However, these widgets lack robust state management capabilities and do not support user-defned customization of the interactive components. Magneton framework bridges these gaps by introducing a built-in interaction history tracker, a state-manager to maintain widget state history, and an action wrapper to enable on-demand customization of operations defined by widget developers.
