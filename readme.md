@@ -140,9 +140,9 @@ widget.show()
 
 Following are some more concrete examples of widgets created with `Magneton` and their capabilities:
 
-- Pre-defined widget: [View state-wise distribution](https://github.com/rit-git/magneton-examples/blob/main/notebooks/prebuilt_widget_example.ipynb)
-- Customizable widgets: {[Single component](https://github.com/rit-git/magneton-examples/blob/main/notebooks/widget_example_custom_init.ipynb), [All components](https://github.com/rit-git/magneton-examples/blob/main/notebooks/widget_example_custom_all.ipynb)}
-- Customize using GPT-3/ChatGPT-powered UDFs: {[GPT-3](https://github.com/rit-git/magneton-examples/blob/main/notebooks/gpt3-example.ipynb), [ChatGPT](https://github.com/rit-git/magneton-examples/blob/main/notebooks/chatGPT-example.ipynb)}
+- Pre-defined widget: [View state-wise distribution](https://github.com/megagonlabs/magneton-examples/blob/main/notebooks/prebuilt_widget_example.ipynb)
+- Customizable widgets: {[Single component](https://github.com/megagonlabs/magneton-examples/blob/main/notebooks/widget_example_custom_init.ipynb), [All components](https://github.com/rit-git/magneton-examples/blob/main/notebooks/widget_example_custom_all.ipynb)}
+- Customize using GPT-3/ChatGPT-powered UDFs: {[GPT-3](https://github.com/megagonlabs/magneton-examples/blob/main/notebooks/gpt3-example.ipynb), [ChatGPT](https://github.com/rit-git/magneton-examples/blob/main/notebooks/chatGPT-example.ipynb)}
 
 # Citation and Contact
 For more details on the `Magneton` framework read our technical paper at [CHI 2023](https://doi.org/10.1145/3544549.3585807). Cite our work as follows: 
