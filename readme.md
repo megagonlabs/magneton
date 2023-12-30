@@ -77,7 +77,7 @@ const base: Configuration = {
 
 Finally, update the `NAME` constant in `src/your-package-name/core/idom_loader.py`.
 
-## Building and Debugging
+## Building 
 
 Use the following command to build the package to `dist`.
 
@@ -87,6 +87,19 @@ Use the following command to build the package to `dist`.
 # Build package for deployment
 yarn build # or `npm run build`
 ```
+
+**Warning** You may get the following error during the build: 
+```sh
+$ python -m build
+/usr/local/anaconda3/envs/your-package-name/bin/python: No module named build
+error Command failed with exit code 1.
+```
+If you encounter this error, simply run the following:
+```sh
+pip install build
+```
+
+## Debugging
 
 To get started debugging, first run the following command to "install" your package. This creates a symlink to your source, allowing you to make changes that are reflected immediately without requiring a rebuild. Read more on how it works [here](https://pip.pypa.io/en/stable/topics/local-project-installs/#editable-installs). This only needs to be done once.
 
