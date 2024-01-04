@@ -21,7 +21,7 @@ First, clone this repo with the following commands.
 
 ```sh
 # Clone the repository from git
-git clone git@github.com:rit-git/magneton.git
+git clone https://github.com/megagonlabs/magneton.git
 
 # cd into cloned repo
 cd magneton
